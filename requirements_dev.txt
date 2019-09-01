@@ -1,0 +1,8 @@
+black==19.3b0
+blinker==1.4
+pylint==2.3.1
+pytest==4.4.1
+pytest-cov==2.6.1
+pytest-runner==4.4
+pytest-watch==4.2.0
+rope==0.14.0
