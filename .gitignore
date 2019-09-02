@@ -4,6 +4,7 @@
 *.egg-info/
 __pycache__/
 .pytest_cache/
+test-results/
 
 # vscode
 .vscode/
