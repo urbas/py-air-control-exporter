@@ -1,5 +1,5 @@
 # Philips Air Purifier Exporter
-
+Exports Philips Air Purifiiers' metrics to Prometheus.
 
 ## Installation
 ```bash
