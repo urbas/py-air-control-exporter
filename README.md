@@ -10,7 +10,7 @@ pip install -e .
 
 ## Running
 ```bash
-FLASK_ENV=development FLASK_APP=philips_air_purifier_exporter/app.py flask run --host 0.0.0.0
+PHILIPS_AIR_PURIFIER_HOST=<ip of your air purifier> FLASK_ENV=development FLASK_APP=philips_air_purifier_exporter/app.py flask run --host 0.0.0.0
 ```
 This will serve metrics at `http://localhost:5000/metrics`.
 
