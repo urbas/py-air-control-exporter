@@ -1,9 +1,11 @@
 # Python
-.venv/
-*.eggs/
-*.egg-info/
 __pycache__/
+.coverage*
 .pytest_cache/
+.venv/
+*.egg-info/
+*.eggs/
+htmlcov/
 test-results/
 
 # vscode

@@ -2,7 +2,7 @@ import logging
 from os import environ
 from flask import Blueprint, abort
 from flask.json import jsonify
-from philips_air_purifier_exporter.comms import get_status
+from philips_air_purifier.status import get_status
 from philips_air_purifier_exporter.prometheus import to_metrics
 
 
