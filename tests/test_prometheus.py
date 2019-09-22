@@ -1,6 +1,6 @@
 from textwrap import dedent
 from philips_air_purifier_exporter.prometheus import to_metrics
-from test import status_responses
+from tests import status_responses
 
 
 def test_to_metrics():

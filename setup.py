@@ -5,11 +5,7 @@
 from os import uname
 from setuptools import setup, find_packages
 
-REQUIREMENTS = [
-    "Flask==1.1.1",
-    "philips-air-purifier==0.0.2",
-    "requests==2.22.0",
-]
+REQUIREMENTS = ["Flask>=1.0.0", "philips-air-purifier>=0.0.4"]
 
 SETUP_REQUIREMENTS = ["pytest-runner"]
 
