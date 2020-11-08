@@ -1,8 +1,8 @@
 from flask import Flask
-from philips_air_purifier_exporter import metrics
+from py_air_control_exporter import metrics
 
 
-def create_app(users=None):
+def create_app():
     app = Flask(__name__)
     app.register_blueprint(metrics.API)
     return app

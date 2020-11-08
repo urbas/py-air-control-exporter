@@ -2,29 +2,35 @@
 
 """The setup script."""
 
-from os import uname
 from setuptools import setup, find_packages
 
-REQUIREMENTS = ["Flask>=1.0.0", "philips-air-purifier>=0.0.4"]
+REQUIREMENTS = ["Flask>=1.0.0", "py-air-control>=2.0.0"]
 
 SETUP_REQUIREMENTS = ["pytest-runner"]
 
 TEST_REQUIREMENTS = ["pytest"]
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+with open("CHANGELOG.md", "r") as fh:
+    long_description += "\n\n" + fh.read()
+
 setup(
     author="Matej Urbas",
     author_email="matej.urbas@gmail.com",
     entry_points={
-        "console_scripts": [
-            "philips-air-exporter=philips_air_purifier_exporter.app:main"
-        ]
+        "console_scripts": ["py-air-control-exporter=py_air_control_exporter.app:main"]
     },
-    install_requires=REQUIREMENTS,
     include_package_data=True,
-    keywords="philips_air_purifier_exporter",
-    name="philips_air_purifier_exporter",
-    packages=find_packages(include=["philips_air_purifier_exporter"]),
+    install_requires=REQUIREMENTS,
+    keywords=["py-air-control-exporter", "py-air-control", "prometheus", "exporter"],
+    long_description_content_type="text/markdown",
+    long_description=long_description,
+    name="py-air-control-exporter",
+    packages=find_packages(include=["py_air_control_exporter"]),
     setup_requires=SETUP_REQUIREMENTS,
     test_suite="tests",
     tests_require=TEST_REQUIREMENTS,
+    version="0.1.0",
 )
