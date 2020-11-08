@@ -1,4 +1,4 @@
-# Philips Air Purifier Exporter [![build-badge]](https://travis-ci.com/github/urbas/philips_air_purifier_exporter) [![pypi-badge]](https://pypi.org/project/py-air-control-exporter/)
+# py-air-control-exporter [![build-badge]](https://travis-ci.com/github/urbas/py-air-control-exporter) [![pypi-badge]](https://pypi.org/project/py-air-control-exporter/)
 
 Exports air quality metrics to Prometheus.
 
@@ -29,6 +29,6 @@ scrape_configs:
           location: "bedroom"
 ```
 
-[build-badge]: https://travis-ci.com/urbas/philips_air_purifier_exporter.svg?branch=master
+[build-badge]: https://travis-ci.com/urbas/py-air-control-exporter.svg?branch=master
 [py-air-control]: https://github.com/rgerganov/py-air-control
 [pypi-badge]: https://badge.fury.io/py/py-air-control-exporter.svg
