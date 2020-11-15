@@ -24,7 +24,8 @@ def get():
             HOST_ENV_VAR,
         )
         return abort(500)
-    client = _get_client(host)
+    protocol = environ.get(PROTOCOL_ENV_VAR, HTTP_PROTOCOL)
+    client = get_client(protocol, host)
     if client is None:
         return abort(500)
     try:
@@ -40,8 +41,7 @@ def get():
         return abort(501)
 
 
-def _get_client(host):
-    protocol = environ.get(PROTOCOL_ENV_VAR, HTTP_PROTOCOL)
+def get_client(protocol, host):
     if protocol == HTTP_PROTOCOL:
         return http_air_client.HTTPAirClient(host)
     if protocol == COAP_PROTOCOL:
