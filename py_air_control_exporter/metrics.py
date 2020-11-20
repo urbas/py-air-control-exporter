@@ -1,21 +1,55 @@
 import logging
 from os import environ
 
-from flask import Blueprint, abort
+import prometheus_client.core
 from pyairctrl import coap_client, http_air_client, plain_coap_client
 
-from py_air_control_exporter import prometheus
-
-API = Blueprint("metrics", __name__, url_prefix="/metrics")
 HOST_ENV_VAR = "PY_AIR_CONTROL_HOST"
 PROTOCOL_ENV_VAR = "PY_AIR_CONTROL_PROTOCOL"
 HTTP_PROTOCOL = "http"
 COAP_PROTOCOL = "coap"
 PLAIN_COAP_PROTOCOL = "plain_coap"
+_FAN_SPEED_TO_INT = {"s": 0, "1": 1, "2": 2, "3": 3, "t": 4}
 
 
-@API.route("")
-def get():
+class PyAirControlCollector:
+    def collect(self):
+        status = get_status()
+        if status is None:
+            return None
+
+        logging.debug("Got the following status from py-air-control: %s", status)
+        yield prometheus_client.core.GaugeMetricFamily(
+            "py_air_control_air_quality",
+            "IAI allergen index from 1 to 12, where 1 indicates best air quality.",
+            value=status["iaql"],
+        )
+        yield prometheus_client.core.GaugeMetricFamily(
+            "py_air_control_is_manual",
+            "Value '1' indicates manual mode while value '0' indicates "
+            "automatic mode.",
+            value=1 if is_manual_mode(status) else 0,
+        )
+        yield prometheus_client.core.GaugeMetricFamily(
+            "py_air_control_is_on",
+            "Value '1' indicates that the air purifier is turned on while value "
+            "'0' indicates it's turned off.",
+            value=1 if is_on(status) else 0,
+        )
+        yield prometheus_client.core.GaugeMetricFamily(
+            "py_air_control_pm25",
+            "Micrograms of PM2.5 particles per cubic metre.",
+            value=status["pm25"],
+        )
+        yield prometheus_client.core.GaugeMetricFamily(
+            "py_air_control_speed",
+            "The fan speed setting (0 is sleep, 1-3 correspond to level settings, "
+            "and 4 stands for 'turbo').",
+            value=fan_speed_to_int(status),
+        )
+
+
+def get_status():
     try:
         host = environ[HOST_ENV_VAR]
     except KeyError:
@@ -23,22 +57,22 @@ def get():
             "Please specify the host address of the air control device via the environment variable %s",
             HOST_ENV_VAR,
         )
-        return abort(500)
+        return None
+
     protocol = environ.get(PROTOCOL_ENV_VAR, HTTP_PROTOCOL)
     client = get_client(protocol, host)
     if client is None:
-        return abort(500)
+        return None
+
     try:
-        status = client.get_status()
-        logging.debug("Got the following status from py-air-control: %s", status)
-        return prometheus.to_metrics(status)
+        return client.get_status()
     except Exception as ex:
         logging.error(
             "Could not read values from air control device %s. Error: %s",
             host,
             ex,
         )
-        return abort(501)
+        return None
 
 
 def get_client(protocol, host):
@@ -57,3 +91,15 @@ def get_client(protocol, host):
         PLAIN_COAP_PROTOCOL,
     )
     return None
+
+
+def fan_speed_to_int(status):
+    return _FAN_SPEED_TO_INT[status["om"]]
+
+
+def is_on(status):
+    return status["pwr"] == "1"
+
+
+def is_manual_mode(status):
+    return status["mode"] == "M"
