@@ -36,5 +36,5 @@ setup(
     setup_requires=SETUP_REQUIREMENTS,
     test_suite="tests",
     tests_require=TEST_REQUIREMENTS,
-    version="0.1.0",
+    version="0.1.1",
 )

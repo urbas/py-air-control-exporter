@@ -1,4 +1,4 @@
-# 0.1.1 (upcoming)
+# 0.1.1
 
 - Ported to `prometheus_client` and added descriptions to each metric.
 
