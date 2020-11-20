@@ -4,7 +4,11 @@
 
 from setuptools import setup, find_packages
 
-REQUIREMENTS = ["Flask>=1.0.0", "py-air-control>=2.0.0"]
+REQUIREMENTS = [
+    "Flask>=1.0.0",
+    "prometheus_client>=0.9.0",
+    "py-air-control>=2.0.0",
+]
 
 SETUP_REQUIREMENTS = ["pytest-runner"]
 
