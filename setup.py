@@ -21,11 +21,8 @@ with open("CHANGELOG.md", "r") as fh:
     long_description += "\n\n" + fh.read()
 
 setup(
-    author="Matej Urbas",
     author_email="matej.urbas@gmail.com",
-    entry_points={
-        "console_scripts": ["py-air-control-exporter=py_air_control_exporter.app:main"]
-    },
+    author="Matej Urbas",
     include_package_data=True,
     install_requires=REQUIREMENTS,
     keywords=["py-air-control-exporter", "py-air-control", "prometheus", "exporter"],
