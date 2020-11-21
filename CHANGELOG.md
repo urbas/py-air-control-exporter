@@ -1,6 +1,7 @@
 # 0.1.2 (upcoming)
 
 - Removed the `py-air-control-exporter` entry point.
+- Fixed `pyairctrl.http_air_client` references to `pyairctrl.http_client`.
 
 # 0.1.1
 

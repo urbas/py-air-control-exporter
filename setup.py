@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 REQUIREMENTS = [
     "Flask>=1.0.0",
-    "prometheus_client>=0.9.0",
+    "prometheus_client>=0.8.0",
     "py-air-control>=2.0.0",
 ]
 
