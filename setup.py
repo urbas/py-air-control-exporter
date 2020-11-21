@@ -2,6 +2,7 @@
 
 """The setup script."""
 
+import os
 from setuptools import setup, find_packages
 
 REQUIREMENTS = [
@@ -17,8 +18,11 @@ TEST_REQUIREMENTS = ["pytest"]
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-with open("CHANGELOG.md", "r") as fh:
-    long_description += "\n\n" + fh.read()
+# NB: CHANGELOG.md is not included in source distributions.
+# This is why we skip it if it's not present.
+if os.path.exists("CHANGELOG.md"):
+    with open("CHANGELOG.md", "r") as fh:
+        long_description += "\n\n" + fh.read()
 
 setup(
     author_email="matej.urbas@gmail.com",
@@ -33,5 +37,5 @@ setup(
     setup_requires=SETUP_REQUIREMENTS,
     test_suite="tests",
     tests_require=TEST_REQUIREMENTS,
-    version="0.1.1",
+    version="0.1.2",
 )
