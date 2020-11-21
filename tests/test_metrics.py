@@ -1,17 +1,14 @@
 import logging
 from unittest import mock
 
-import pyairctrl
 import pytest
 
 from py_air_control_exporter import app, metrics
 from tests import status_responses
 
 
-@mock.patch("pyairctrl.http_air_client.HTTPAirClient.get_status")
-def test_metrics(mock_http_client_get_status, monkeypatch):
+def test_metrics(mock_http_client, monkeypatch):
     """metrics endpoint produces the expected metrics"""
-    mock_http_client_get_status.return_value = status_responses.SLEEP_STATUS
     monkeypatch.setenv(metrics.HOST_ENV_VAR, "127.0.0.1")
     response = app.create_app().test_client().get("/metrics")
     assert b"py_air_control_air_quality 1.0\n" in response.data
@@ -41,10 +38,9 @@ def test_metrics_no_host_provided(caplog):
     assert metrics.HOST_ENV_VAR in caplog.text
 
 
-@mock.patch("pyairctrl.http_air_client.HTTPAirClient.get_status")
-def test_metrics_pyairctrl_failure(mock_get_status, monkeypatch, caplog):
+def test_metrics_pyairctrl_failure(mock_http_client, monkeypatch, caplog):
     """error logs explain that there was a failure getting the status from pyairctrl"""
-    mock_get_status.side_effect = Exception("Some foobar error")
+    mock_http_client["get_status"].side_effect = Exception("Some foobar error")
     monkeypatch.setenv(metrics.HOST_ENV_VAR, "127.0.0.1")
     response = app.create_app().test_client().get("/metrics")
     assert not response.data
@@ -61,10 +57,9 @@ def test_metrics_unknown_client(monkeypatch, caplog):
     assert "Unknown protocol 'foobar'" in caplog.text
 
 
-def test_get_client_http_protocol():
-    assert isinstance(
-        metrics.get_client("http", "1.2.3.4"), pyairctrl.http_air_client.HTTPAirClient
-    )
+@mock.patch("pyairctrl.http_client.HTTPAirClient")
+def test_get_client_http_protocol(mock_http_client):
+    assert metrics.get_client("http", "1.2.3.4") == mock_http_client.return_value
 
 
 @mock.patch("pyairctrl.coap_client.CoAPAirClient")
@@ -92,3 +87,12 @@ def _mock_get_status(caplog):
     with mock.patch("py_air_control_exporter.metrics.get_status") as mock_get_status:
         mock_get_status.return_value = status_responses.SLEEP_STATUS
         yield mock_get_status
+
+
+@pytest.fixture(name="mock_http_client")
+def _mock_http_client(caplog):
+    with mock.patch(
+        "pyairctrl.http_client.HTTPAirClient.__init__", return_value=None
+    ), mock.patch("pyairctrl.http_client.HTTPAirClient.get_status") as mock_get_status:
+        mock_get_status.return_value = status_responses.SLEEP_STATUS
+        yield {"get_status": mock_get_status}

@@ -2,7 +2,7 @@ import logging
 from os import environ
 
 import prometheus_client.core
-from pyairctrl import coap_client, http_air_client, plain_coap_client
+from pyairctrl import coap_client, http_client, plain_coap_client
 
 HOST_ENV_VAR = "PY_AIR_CONTROL_HOST"
 PROTOCOL_ENV_VAR = "PY_AIR_CONTROL_PROTOCOL"
@@ -77,7 +77,7 @@ def get_status():
 
 def get_client(protocol, host):
     if protocol == HTTP_PROTOCOL:
-        return http_air_client.HTTPAirClient(host)
+        return http_client.HTTPAirClient(host)
     if protocol == COAP_PROTOCOL:
         return coap_client.CoAPAirClient(host)
     if protocol == PLAIN_COAP_PROTOCOL:
