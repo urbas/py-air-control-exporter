@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 from py_air_control_exporter import app, metrics
-from tests import status_responses
+from test import status_responses
 
 
 def test_metrics(mock_http_client, monkeypatch):

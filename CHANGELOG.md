@@ -1,3 +1,8 @@
+# 0.1.3
+
+- Source distribution fixes: using SCM version, including test sources, including
+   `CHANGELOG.md`.
+
 # 0.1.2
 
 - Removed the `py-air-control-exporter` entry point.
