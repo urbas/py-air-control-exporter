@@ -13,3 +13,6 @@ test-results/
 
 # vscode
 .vscode/
+
+# py-air-control
+logging.conf
