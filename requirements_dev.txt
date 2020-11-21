@@ -4,3 +4,4 @@ pytest-cov==2.10.1
 pytest-watch==4.2.0
 pytest==6.1.2
 rope==0.18.0
+setuptools_scm==4.1.2

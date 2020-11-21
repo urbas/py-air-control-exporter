@@ -31,7 +31,9 @@ def test_metrics_fetched_again(mock_get_status, monkeypatch):
 
 
 def test_metrics_no_host_provided(caplog):
-    """error logs explain that the purifier host has to be provided through an env var"""
+    """
+    error logs explain that the purifier host has to be provided through an env var
+    """
     response = app.create_app().test_client().get("/metrics")
     assert not response.data
     assert "Please specify the host address" in caplog.text

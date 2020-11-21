@@ -2,8 +2,10 @@
 
 """The setup script."""
 
+import packaging.version
+import setuptools_scm
 from pathlib import Path
-from setuptools import setup, find_packages
+from setuptools import setup
 
 REQUIREMENTS = [
     "Flask>=1.0.0",
@@ -15,9 +17,27 @@ SETUP_REQUIREMENTS = ["pytest-runner", "setuptools_scm"]
 
 TEST_REQUIREMENTS = ["pytest"]
 
-long_description = (
-    f"{Path('README.md').read_text()}\n\n{Path('CHANGELOG.md').read_text()}"
-)
+CHANGELOG = Path("CHANGELOG.md").read_text()
+
+long_description = f"{Path('README.md').read_text()}\n\n{CHANGELOG}"
+
+
+def get_version():
+    try:
+        version = setuptools_scm.get_version()
+        changelog_expected_version = ".".join(
+            str(el) for el in packaging.version.parse(version).release
+        )
+        changelog_version = CHANGELOG.splitlines()[0].strip("#").strip()
+        assert changelog_version == changelog_expected_version, (
+            f"Unexpected version in CHANGELOG.md's top section. Should be "
+            f"{changelog_expected_version} but is {changelog_version}"
+        )
+        return version
+    except LookupError:
+        # NB: we could be building from a tarball.
+        return "0.0.0"
+
 
 setup(
     author_email="matej.urbas@gmail.com",
@@ -28,9 +48,9 @@ setup(
     long_description_content_type="text/markdown",
     long_description=long_description,
     name="py-air-control-exporter",
-    packages=find_packages(include=["py_air_control_exporter"]),
+    packages=["py_air_control_exporter"],
     setup_requires=SETUP_REQUIREMENTS,
     test_suite="test",
     tests_require=TEST_REQUIREMENTS,
-    use_scm_version=True,
+    version=get_version(),
 )

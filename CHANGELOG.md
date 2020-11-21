@@ -1,3 +1,9 @@
+# 0.1.4
+
+- Packaging fixes:
+   - Building outside a git repository now supported.
+   - Build process now verifies that the CHANGELOG.md version matches the git version.
+
 # 0.1.3
 
 - Source distribution fixes: using SCM version, including test sources, including

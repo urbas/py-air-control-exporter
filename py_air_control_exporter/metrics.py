@@ -54,7 +54,8 @@ def get_status():
         host = environ[HOST_ENV_VAR]
     except KeyError:
         logging.error(
-            "Please specify the host address of the air control device via the environment variable %s",
+            "Please specify the host address of the air control device via the "
+            "environment variable %s",
             HOST_ENV_VAR,
         )
         return None
@@ -83,7 +84,8 @@ def get_client(protocol, host):
     if protocol == PLAIN_COAP_PROTOCOL:
         return plain_coap_client.PlainCoAPAirClient(host)
     logging.error(
-        "Unknown protocol '%s'. Please set the environment variable '%s' to one of the following: %s, %s, %s",
+        "Unknown protocol '%s'. Please set the environment variable '%s' to one of the "
+        "following: %s, %s, %s",
         protocol,
         PROTOCOL_ENV_VAR,
         HTTP_PROTOCOL,
