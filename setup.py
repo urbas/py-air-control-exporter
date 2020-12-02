@@ -29,9 +29,10 @@ def get_version():
             str(el) for el in packaging.version.parse(version).release
         )
         changelog_version = CHANGELOG.splitlines()[0].strip("#").strip()
-        assert changelog_version == changelog_expected_version, (
-            f"Unexpected version in CHANGELOG.md's top section. Should be "
-            f"{changelog_expected_version} but is {changelog_version}"
+        assert changelog_version >= changelog_expected_version, (
+            f"Unexpected version in CHANGELOG.md's top section. Should be greater "
+            f"than or equal to {changelog_expected_version} but is "
+            f"{changelog_version}. Please add a section for the upcoming release."
         )
         return version
     except LookupError:
