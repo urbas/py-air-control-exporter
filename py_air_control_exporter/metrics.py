@@ -13,8 +13,12 @@ _FAN_SPEED_TO_INT = {"s": 0, "1": 1, "2": 2, "3": 3, "t": 4}
 
 
 class PyAirControlCollector:
+    def __init__(self, host=None, protocol=None):
+        self._host = host
+        self._protocol = protocol
+
     def collect(self):
-        status = get_status()
+        status = get_status(host=self._host, protocol=self._protocol)
         if status is None:
             return None
 
@@ -49,9 +53,9 @@ class PyAirControlCollector:
         )
 
 
-def get_status():
+def get_status(host=None, protocol=None):
     try:
-        host = environ[HOST_ENV_VAR]
+        host = host or environ[HOST_ENV_VAR]
     except KeyError:
         logging.error(
             "Please specify the host address of the air control device via the "
@@ -60,7 +64,7 @@ def get_status():
         )
         return None
 
-    protocol = environ.get(PROTOCOL_ENV_VAR, HTTP_PROTOCOL)
+    protocol = protocol or environ.get(PROTOCOL_ENV_VAR, HTTP_PROTOCOL)
     client = get_client(protocol, host)
     if client is None:
         return None

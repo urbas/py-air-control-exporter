@@ -13,10 +13,12 @@ pip install py-air-control-exporter
 ## Running
 
 ```bash
-PY_AIR_CONTROL_HOST=<ip of your air purifier> PY_AIR_CONTROL_PROTOCOL=<http|coap|plain_coap> FLASK_ENV=development FLASK_APP=py_air_control_exporter.app flask run --host 0.0.0.0
+py-air-control-exporter --host 192.168.1.105 --protocol <http|coap|plain_coap>
 ```
 
-This will serve metrics at `http://localhost:5000/metrics`.
+This will serve metrics at `http://0.0.0.0:9896/metrics`.
+
+For more instructions run `py-air-control-exporter --help`.
 
 You can make Prometheus scrape these with this scrape config:
 
@@ -24,7 +26,7 @@ You can make Prometheus scrape these with this scrape config:
 scrape_configs:
   - job_name: "py_air_control"
     static_configs:
-      - targets: ["<the IP of your exporter host>:5000"]
+      - targets: ["<the IP of your exporter host>:9896"]
         labels:
           location: "bedroom"
 ```

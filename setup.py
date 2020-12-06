@@ -6,6 +6,7 @@ from pathlib import Path
 from setuptools import setup
 
 REQUIREMENTS = [
+    "click>=7.0.0",
     "Flask>=1.0.0",
     "prometheus_client>=0.8.0",
     "py-air-control>=2.0.0",
@@ -22,6 +23,11 @@ long_description = f"{Path('README.md').read_text()}\n\n{CHANGELOG}"
 setup(
     author_email="matej.urbas@gmail.com",
     author="Matej Urbas",
+    entry_points={
+        "console_scripts": [
+            "py-air-control-exporter = py_air_control_exporter.main:main"
+        ]
+    },
     include_package_data=True,
     install_requires=REQUIREMENTS,
     keywords=["py-air-control-exporter", "py-air-control", "prometheus", "exporter"],

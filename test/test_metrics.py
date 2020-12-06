@@ -19,6 +19,12 @@ def test_metrics(mock_http_client, monkeypatch):
     assert b"IAI allergen index" in response.data
 
 
+def test_host_and_protocol_parameters(mock_get_status):
+    """check that we can provide the host and protocol through app parameters"""
+    app.create_app(host="1.2.3.4", protocol="foobar").test_client().get("/metrics")
+    mock_get_status.assert_called_with(host="1.2.3.4", protocol="foobar")
+
+
 def test_metrics_fetched_again(mock_get_status, monkeypatch):
     """check that status is fetched every time metrics are pulled"""
     assert mock_get_status.call_count == 0
@@ -77,6 +83,19 @@ def test_get_client_plain_coap_protocol(mock_plain_coap_client):
         == mock_plain_coap_client.return_value
     )
     mock_plain_coap_client.assert_called_with("1.2.3.4")
+
+
+@mock.patch("py_air_control_exporter.metrics.get_client")
+def test_get_status_host_and_protocol_parameters(mock_get_client):
+    """
+    check that the host and protocol can be passed through parameters when getting the
+    status
+    """
+    assert (
+        metrics.get_status(host="1.2.3.4", protocol="foobar")
+        == mock_get_client.return_value.get_status.return_value
+    )
+    mock_get_client.assert_called_once_with("foobar", "1.2.3.4")
 
 
 @pytest.fixture(autouse=1)
