@@ -1,5 +1,7 @@
 # 0.1.6
 
+- Default listening port and address are now displayed in the CLI help.
+
 # 0.1.5
 
 - Introduced the `py-air-control-exporter` command line tool.

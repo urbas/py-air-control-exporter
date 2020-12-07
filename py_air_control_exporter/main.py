@@ -21,11 +21,13 @@ from py_air_control_exporter import app, metrics
     "--listen-address",
     default="0.0.0.0",
     help="The address on which to listen for HTTP requests.",
+    show_default=True,
 )
 @click.option(
     "--listen-port",
     default=9896,
     help="The port on which to listen for HTTP requests.",
+    show_default=True,
 )
 def main(host, protocol, listen_address, listen_port):
     app.create_app(host=host, protocol=protocol).run(
