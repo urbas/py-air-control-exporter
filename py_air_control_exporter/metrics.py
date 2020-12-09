@@ -16,10 +16,19 @@ class PyAirControlCollector:
     def __init__(self, host=None, protocol=None):
         self._host = host
         self._protocol = protocol
+        self._error_counter = 0
 
     def collect(self):
-        status = get_status(host=self._host, protocol=self._protocol)
+        status = None
+        try:
+            status = get_status(host=self._host, protocol=self._protocol)
+        except Exception as ex:
+            logging.error("Failed to sample the air quality. Error: %s", ex)
+            yield self._sampling_error()
+            return None
+
         if status is None:
+            yield self._sampling_error()
             return None
 
         logging.debug("Got the following status from py-air-control: %s", status)
@@ -50,6 +59,14 @@ class PyAirControlCollector:
             "The fan speed setting (0 is sleep, 1-3 correspond to level settings, "
             "and 4 stands for 'turbo').",
             value=fan_speed_to_int(status),
+        )
+
+    def _sampling_error(self):
+        self._error_counter += 1
+        return prometheus_client.core.CounterMetricFamily(
+            "py_air_control_sampling_error",
+            "Counts the number of times sampling air quality metrics failed.",
+            value=self._error_counter,
         )
 
 

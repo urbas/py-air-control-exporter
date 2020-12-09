@@ -1,6 +1,7 @@
-# 0.1.6
+# 0.2.0
 
 - Default listening port and address are now displayed in the CLI help.
+- The exporter now counts sampling errors and exports this as a metric rather than crash the process.
 
 # 0.1.5
 

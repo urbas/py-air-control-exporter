@@ -19,6 +19,16 @@ def test_metrics(mock_http_client, monkeypatch):
     assert b"IAI allergen index" in response.data
 
 
+def test_metrics_failure(monkeypatch):
+    """metrics endpoint should produce a sampling error counter on error"""
+    monkeypatch.setenv(metrics.HOST_ENV_VAR, "127.0.0.1")
+    test_client = app.create_app().test_client()
+    response = test_client.get("/metrics")
+    assert b"py_air_control_sampling_error_total 2.0\n" in response.data
+    response = test_client.get("/metrics")
+    assert b"py_air_control_sampling_error_total 3.0\n" in response.data
+
+
 def test_host_and_protocol_parameters(mock_get_status):
     """check that we can provide the host and protocol through app parameters"""
     app.create_app(host="1.2.3.4", protocol="foobar").test_client().get("/metrics")
@@ -41,7 +51,7 @@ def test_metrics_no_host_provided(caplog):
     error logs explain that the purifier host has to be provided through an env var
     """
     response = app.create_app().test_client().get("/metrics")
-    assert not response.data
+    assert b"py_air_control_sampling_error" in response.data
     assert "Please specify the host address" in caplog.text
     assert metrics.HOST_ENV_VAR in caplog.text
 
@@ -51,7 +61,7 @@ def test_metrics_pyairctrl_failure(mock_http_client, monkeypatch, caplog):
     mock_http_client["get_status"].side_effect = Exception("Some foobar error")
     monkeypatch.setenv(metrics.HOST_ENV_VAR, "127.0.0.1")
     response = app.create_app().test_client().get("/metrics")
-    assert not response.data
+    assert b"py_air_control_sampling_error" in response.data
     assert "Could not read values from air control device" in caplog.text
     assert "Some foobar error" in caplog.text
 
@@ -61,7 +71,7 @@ def test_metrics_unknown_client(monkeypatch, caplog):
     monkeypatch.setenv(metrics.HOST_ENV_VAR, "127.0.0.1")
     monkeypatch.setenv(metrics.PROTOCOL_ENV_VAR, "foobar")
     response = app.create_app().test_client().get("/metrics")
-    assert not response.data
+    assert b"py_air_control_sampling_error" in response.data
     assert "Unknown protocol 'foobar'" in caplog.text
 
 
