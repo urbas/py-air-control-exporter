@@ -16,6 +16,9 @@ def test_metrics(mock_http_client, monkeypatch):
     assert b"py_air_control_is_on 1.0\n" in response.data
     assert b"py_air_control_pm25 2.0\n" in response.data
     assert b"py_air_control_speed 0.0\n" in response.data
+    assert b'py_air_control_filter_hours{id="0",type=""} 0.0\n' in response.data
+    assert b'py_air_control_filter_hours{id="1",type="A3"} 185.0\n' in response.data
+    assert b'py_air_control_filter_hours{id="2",type="C7"} 2228.0\n' in response.data
     assert b"IAI allergen index" in response.data
 
 
@@ -35,15 +38,17 @@ def test_host_and_protocol_parameters(mock_get_status):
     mock_get_status.assert_called_with(host="1.2.3.4", protocol="foobar")
 
 
-def test_metrics_fetched_again(mock_get_status, monkeypatch):
+def test_metrics_fetched_again(mock_http_client):
     """check that status is fetched every time metrics are pulled"""
-    assert mock_get_status.call_count == 0
-    test_client = app.create_app().test_client()
-    assert mock_get_status.call_count == 1
+    assert mock_http_client["get_status"].call_count == 0
+    test_client = app.create_app(
+        host="1.2.3.4", protocol=metrics.HTTP_PROTOCOL
+    ).test_client()
+    assert mock_http_client["get_status"].call_count == 1
     test_client.get("/metrics")
-    assert mock_get_status.call_count == 2
+    assert mock_http_client["get_status"].call_count == 2
     test_client.get("/metrics")
-    assert mock_get_status.call_count == 3
+    assert mock_http_client["get_status"].call_count == 3
 
 
 def test_metrics_no_host_provided(caplog):
@@ -101,10 +106,10 @@ def test_get_status_host_and_protocol_parameters(mock_get_client):
     check that the host and protocol can be passed through parameters when getting the
     status
     """
-    assert (
-        metrics.get_status(host="1.2.3.4", protocol="foobar")
-        == mock_get_client.return_value.get_status.return_value
-    )
+    assert metrics.get_status(host="1.2.3.4", protocol="foobar") == {
+        "status": mock_get_client.return_value.get_status.return_value,
+        "filters": mock_get_client.return_value.get_filters.return_value,
+    }
     mock_get_client.assert_called_once_with("foobar", "1.2.3.4")
 
 
@@ -124,6 +129,11 @@ def _mock_get_status(caplog):
 def _mock_http_client(caplog):
     with mock.patch(
         "pyairctrl.http_client.HTTPAirClient.__init__", return_value=None
-    ), mock.patch("pyairctrl.http_client.HTTPAirClient.get_status") as mock_get_status:
+    ), mock.patch(
+        "pyairctrl.http_client.HTTPAirClient.get_status"
+    ) as mock_get_status, mock.patch(
+        "pyairctrl.http_client.HTTPAirClient.get_filters"
+    ) as mock_get_filters:
         mock_get_status.return_value = status_responses.SLEEP_STATUS
-        yield {"get_status": mock_get_status}
+        mock_get_filters.return_value = status_responses.FILTERS
+        yield {"get_status": mock_get_status, "get_filters": mock_get_filters}

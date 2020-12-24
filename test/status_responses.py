@@ -13,3 +13,5 @@ SLEEP_STATUS = {
     "ddp": "0",
     "err": 0,
 }
+
+FILTERS = {"fltt1": "A3", "fltt2": "C7", "fltsts0": 0, "fltsts1": 185, "fltsts2": 2228}

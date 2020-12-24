@@ -1,3 +1,7 @@
+# 0.3.0
+
+- Hours remaining to replace or clean filters are now exported as `py_air_control_filter_hours` gauges.
+
 # 0.2.0
 
 - Default listening port and address are now displayed in the CLI help.
