@@ -1,2 +1,2 @@
-include test/*.py
+graft test
 include CHANGELOG.md
