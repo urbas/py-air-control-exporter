@@ -12,7 +12,7 @@ def test_help(monkeypatch, capfd):
     with pytest.raises(SystemExit) as ex_info:
         main()
     assert ex_info.value.code == 0
-    assert "Usage: app-name" in capfd.readouterr().out
+    assert "Usage" in capfd.readouterr().out
 
 
 def test_main(mock_app, monkeypatch):
@@ -45,7 +45,7 @@ def test_hostname_required(monkeypatch, capfd):
     with pytest.raises(SystemExit) as ex_info:
         main()
     assert ex_info.value.code != 0
-    assert "Missing option '--host'" in capfd.readouterr().err
+    assert "--host" in capfd.readouterr().err
 
 
 def test_unknown_protocol(monkeypatch, capfd):
@@ -56,7 +56,7 @@ def test_unknown_protocol(monkeypatch, capfd):
     with pytest.raises(SystemExit) as ex_info:
         main()
     assert ex_info.value.code != 0
-    assert "invalid choice: foobar" in capfd.readouterr().err
+    assert "--protocol" in capfd.readouterr().err
 
 
 def test_default_parameters(mock_app, monkeypatch):

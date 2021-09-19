@@ -1,15 +1,15 @@
 language: python
 python:
-- '3.6'
 - '3.7'
 - '3.8'
+- '3.9'
 install:
 - pip install -r requirements_dev.txt
 - pip install -e .
 script:
 - black --check setup.py test py_air_control_exporter
 - flake8 setup.py test py_air_control_exporter
-- pytest test
+- pytest --cov=py_air_control_exporter test
 deploy:
   provider: pypi
   user: __token__
@@ -19,4 +19,4 @@ deploy:
   on:
     tags: true
     repo: urbas/py-air-control-exporter
-    python: '3.8'
+    python: '3.9'

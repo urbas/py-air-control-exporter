@@ -1,3 +1,9 @@
+# 0.3.1
+
+- Packaging fixes:
+   - Removed `setuptools_scm`, `pytest-cov`, and `pytest` from setup requirements.
+   - Future-proofed CLI tests.
+
 # 0.3.0
 
 - Hours remaining to replace or clean filters are now exported as `py_air_control_filter_hours` gauges.
