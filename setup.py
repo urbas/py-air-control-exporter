@@ -12,8 +12,6 @@ REQUIREMENTS = [
     "py-air-control>=2.0.0",
 ]
 
-SETUP_REQUIREMENTS = ["pytest-runner"]
-
 TEST_REQUIREMENTS = ["pytest"]
 
 CHANGELOG = Path("CHANGELOG.md").read_text()
@@ -36,9 +34,8 @@ setup(
     long_description=long_description,
     name="py-air-control-exporter",
     packages=["py_air_control_exporter"],
-    setup_requires=SETUP_REQUIREMENTS,
     test_suite="test",
     tests_require=TEST_REQUIREMENTS,
     url="https://github.com/urbas/sgp30-exporter",
-    version="0.3.0",
+    version="0.3.1",
 )
