@@ -1,4 +1,4 @@
-# py-air-control-exporter [![build-badge]](https://travis-ci.com/github/urbas/py-air-control-exporter) [![pypi-badge]](https://pypi.org/project/py-air-control-exporter/)
+# py-air-control-exporter [![builder](https://github.com/urbas/py-air-control-exporter/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/urbas/py-air-control-exporter/actions/workflows/build.yml) [![pypi-badge]](https://pypi.org/project/py-air-control-exporter/)
 
 Exports air quality metrics to Prometheus.
 
@@ -31,6 +31,5 @@ scrape_configs:
           location: "bedroom"
 ```
 
-[build-badge]: https://travis-ci.com/urbas/py-air-control-exporter.svg?branch=master
 [py-air-control]: https://github.com/rgerganov/py-air-control
 [pypi-badge]: https://badge.fury.io/py/py-air-control-exporter.svg

@@ -1,0 +1,27 @@
+name: builder
+on: [push, pull_request]
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: DeterminateSystems/flake-checker-action@main
+
+      - name: Checks
+        run: |
+          eval "$(nix print-dev-env)"
+
+          ruff check
+          ruff format --check
+          pyright
+          pytest py_air_control_exporter test
+          hatchling build
+
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
