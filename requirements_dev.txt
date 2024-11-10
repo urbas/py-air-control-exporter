@@ -1,6 +1,0 @@
-black==24.3.0
-flake8==3.9.2
-pytest-cov==2.12.1
-pytest-watch==4.2.0
-pytest==6.2.5
-rope==0.20.1

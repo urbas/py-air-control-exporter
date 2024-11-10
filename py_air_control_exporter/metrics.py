@@ -1,38 +1,61 @@
 import itertools
-import logging
-from os import environ
+from dataclasses import dataclass
+from typing import Callable, Dict, Optional
 
 import prometheus_client.core
-from pyairctrl import coap_client, http_client, plain_coap_client
+from prometheus_client import registry
 
-HOST_ENV_VAR = "PY_AIR_CONTROL_HOST"
-PROTOCOL_ENV_VAR = "PY_AIR_CONTROL_PROTOCOL"
-HTTP_PROTOCOL = "http"
-COAP_PROTOCOL = "coap"
-PLAIN_COAP_PROTOCOL = "plain_coap"
-_FAN_SPEED_TO_INT = {"s": 0, "1": 1, "2": 2, "3": 3, "t": 4}
+from py_air_control_exporter.logging import LOG
 
 
-class PyAirControlCollector:
-    def __init__(self, host=None, protocol=None):
-        self._host = host
-        self._protocol = protocol
+@dataclass
+class Status:
+    fan_speed: float  # Integer representation of fan speed
+    iaql: float  # IAI allergen index
+    is_manual: bool  # True if in manual mode
+    is_on: bool  # True if powered on
+    pm25: float  # PM2.5 value
+
+
+@dataclass
+class Filter:
+    hours: float  # Hours remaining
+    type: str  # Filter type
+
+
+@dataclass
+class Filters:
+    filters: Dict[str, Filter]  # Filter ID to Filter info
+
+
+@dataclass
+class AirControlStatus:
+    status: Optional[Status]
+    filters: Optional[Filters]
+
+
+StatusFetcher = Callable[[], AirControlStatus | None]
+
+
+class PyAirControlCollector(registry.Collector):
+    def __init__(self, status_fetcher: StatusFetcher):
+        self._status_fetcher = status_fetcher
         self._error_counter = 0
 
     def collect(self):
         full_status = None
         try:
-            full_status = get_status(host=self._host, protocol=self._protocol)
+            full_status = self._status_fetcher()
         except Exception as ex:
-            logging.error("Failed to sample the air quality. Error: %s", ex)
+            LOG.error("Failed to sample the air quality. Error: %s", ex)
             return self._sampling_error()
 
         if full_status is None:
             return self._sampling_error()
 
         return itertools.chain(
-            _get_status_metrics(full_status.get("status")),
-            _get_filters_metrics(full_status.get("filters")),
+            _get_status_metrics(full_status.status),
+            _get_filters_metrics(full_status.filters),
         )
 
     def _sampling_error(self):
@@ -46,96 +69,48 @@ class PyAirControlCollector:
         ]
 
 
-def get_status(host=None, protocol=None):
-    try:
-        host = host or environ[HOST_ENV_VAR]
-    except KeyError:
-        logging.error(
-            "Please specify the host address of the air control device via the "
-            "environment variable %s",
-            HOST_ENV_VAR,
-        )
-        return None
-
-    protocol = protocol or environ.get(PROTOCOL_ENV_VAR, HTTP_PROTOCOL)
-    client = get_client(protocol, host)
-    if client is None:
-        return None
-
-    try:
-        return {"status": client.get_status(), "filters": client.get_filters()}
-    except Exception as ex:
-        logging.error(
-            "Could not read values from air control device %s. Error: %s",
-            host,
-            ex,
-        )
-        return None
-
-
-def get_client(protocol, host):
-    if protocol == HTTP_PROTOCOL:
-        return http_client.HTTPAirClient(host)
-    if protocol == COAP_PROTOCOL:
-        return coap_client.CoAPAirClient(host)
-    if protocol == PLAIN_COAP_PROTOCOL:
-        return plain_coap_client.PlainCoAPAirClient(host)
-    logging.error(
-        "Unknown protocol '%s'. Please set the environment variable '%s' to one of the "
-        "following: %s, %s, %s",
-        protocol,
-        PROTOCOL_ENV_VAR,
-        HTTP_PROTOCOL,
-        COAP_PROTOCOL,
-        PLAIN_COAP_PROTOCOL,
-    )
-    return None
-
-
-def _get_status_metrics(status):
+def _get_status_metrics(status: Optional[Status]):
     if status is None:
-        logging.warning("Could not retrieve the status from py-air-control.")
+        LOG.warning("Could not retrieve the status from py-air-control.")
         return []
-    logging.debug("Got the following status from py-air-control: %s", status)
+    LOG.debug("Got the following status from py-air-control: %s", status)
     return [
         prometheus_client.core.GaugeMetricFamily(
             "py_air_control_air_quality",
             "IAI allergen index from 1 to 12, where 1 indicates best air quality.",
-            value=status["iaql"],
+            value=status.iaql,
         ),
         prometheus_client.core.GaugeMetricFamily(
             "py_air_control_is_manual",
             "Value '1' indicates manual mode while value '0' indicates "
             "automatic mode.",
-            value=1 if is_manual_mode(status) else 0,
+            value=1 if status.is_manual else 0,
         ),
         prometheus_client.core.GaugeMetricFamily(
             "py_air_control_is_on",
             "Value '1' indicates that the air purifier is turned on while value "
             "'0' indicates it's turned off.",
-            value=1 if is_on(status) else 0,
+            value=1 if status.is_on else 0,
         ),
         prometheus_client.core.GaugeMetricFamily(
             "py_air_control_pm25",
             "Micrograms of PM2.5 particles per cubic metre.",
-            value=status["pm25"],
+            value=status.pm25,
         ),
         prometheus_client.core.GaugeMetricFamily(
             "py_air_control_speed",
             "The fan speed setting (0 is sleep, 1-3 correspond to level settings, "
             "and 4 stands for 'turbo').",
-            value=fan_speed_to_int(status),
+            value=status.fan_speed,
         ),
     ]
 
 
-def _get_filters_metrics(filters):
+def _get_filters_metrics(filters: Optional[Filters]):
     if filters is None:
-        logging.warning("Could not retrieve filter information from py-air-control.")
+        LOG.warning("Could not retrieve filter information from py-air-control.")
         return []
-    logging.debug("Got the following filters from py-air-control: %s", filters)
-
-    filter_ids = [key[6:] for key, value in filters.items() if key.startswith("fltsts")]
+    LOG.debug("Got the following filters from py-air-control: %s", filters)
 
     filter_metric_family = prometheus_client.core.GaugeMetricFamily(
         "py_air_control_filter_hours",
@@ -143,22 +118,10 @@ def _get_filters_metrics(filters):
         labels=["id", "type"],
     )
 
-    for filter_id in filter_ids:
+    for filter_id, filter_info in filters.filters.items():
         filter_metric_family.add_metric(
-            [filter_id, filters.get(f"fltt{filter_id}", "")],
-            filters[f"fltsts{filter_id}"],
+            [filter_id, filter_info.type],
+            filter_info.hours,
         )
 
     return [filter_metric_family]
-
-
-def fan_speed_to_int(status):
-    return _FAN_SPEED_TO_INT[status["om"]]
-
-
-def is_on(status):
-    return status["pwr"] == "1"
-
-
-def is_manual_mode(status):
-    return status["mode"] == "M"

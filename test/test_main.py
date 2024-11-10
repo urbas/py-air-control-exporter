@@ -1,27 +1,22 @@
-import sys
 from unittest import mock
 
 import pytest
+from click.testing import CliRunner
 
-from py_air_control_exporter import app
-from py_air_control_exporter.main import main
+from py_air_control_exporter import app, main
 
 
 def test_help(monkeypatch, capfd):
-    monkeypatch.setattr(sys, "argv", ["app-name", "--help"])
-    with pytest.raises(SystemExit) as ex_info:
-        main()
-    assert ex_info.value.code == 0
-    assert "Usage" in capfd.readouterr().out
+    result = CliRunner().invoke(main.main, ["--help"])
+    assert result.exit_code == 0
+    assert "Usage" in result.stdout
 
 
-def test_main(mock_app, monkeypatch):
+def test_main(mock_app, mock_create_status_fetcher):
     """check that the exporter Flask app is created with all the given parameters"""
-    monkeypatch.setattr(
-        sys,
-        "argv",
+    result = CliRunner().invoke(
+        main.main,
         [
-            "app-name",
             "--host",
             "192.168.1.123",
             "--protocol",
@@ -32,48 +27,58 @@ def test_main(mock_app, monkeypatch):
             "12345",
         ],
     )
-    with pytest.raises(SystemExit) as ex_info:
-        main()
-    assert ex_info.value.code == 0
-    app.create_app.assert_called_once_with(host="192.168.1.123", protocol="coap")
+    assert result.exit_code == 0
+    mock_create_status_fetcher.assert_called_once_with("192.168.1.123", "coap")
+    app.create_app.assert_called_once_with(mock_create_status_fetcher.return_value)
     mock_app.run.assert_called_once_with(host="1.2.3.4", port=12345)
 
 
 def test_hostname_required(monkeypatch, capfd):
     """check that the hostname of the purifier is a required option"""
-    monkeypatch.setattr(sys, "argv", ["app-name"])
-    with pytest.raises(SystemExit) as ex_info:
-        main()
-    assert ex_info.value.code != 0
-    assert "--host" in capfd.readouterr().err
+    result = CliRunner(mix_stderr=False).invoke(main.main, [])
+    assert result.exit_code != 0
+    assert "--host" in result.stderr
 
 
 def test_unknown_protocol(monkeypatch, capfd):
     """check that failure is reporter if an invalid protocol is provided"""
-    monkeypatch.setattr(
-        sys, "argv", ["app-name", "--host", "192.168.1.123", "--protocol", "foobar"]
+    result = CliRunner(mix_stderr=False).invoke(
+        main.main, ["--host", "192.168.1.123", "--protocol", "foobar"]
     )
-    with pytest.raises(SystemExit) as ex_info:
-        main()
-    assert ex_info.value.code != 0
-    assert "--protocol" in capfd.readouterr().err
+    assert result.exit_code != 0
+    assert "--protocol" in result.stderr
 
 
-def test_default_parameters(mock_app, monkeypatch):
+def test_default_parameters(mock_app, mock_create_status_fetcher):
     """
     check that the exporter Flask app is created with the given hostname and default
     parameters
     """
-    monkeypatch.setattr(sys, "argv", ["app-name", "--host", "192.168.1.123"])
-    with pytest.raises(SystemExit) as ex_info:
-        main()
-    assert ex_info.value.code == 0
-    app.create_app.assert_called_once_with(host="192.168.1.123", protocol="http")
+    result = CliRunner().invoke(main.main, ["--host", "192.168.1.123"])
+    assert result.exit_code == 0
+    mock_create_status_fetcher.assert_called_once_with("192.168.1.123", "http")
     mock_app.run.assert_called_once_with(host="0.0.0.0", port=9896)
 
 
+def test_create_status_fetcher(mocker, mock_app):
+    """Check that the fetcher is created and is ready to fetch."""
+    mock_get_status = mocker.patch(
+        "py_air_control_exporter.py_air_fetcher.get_status", autospec=True
+    )
+    fetcher = main.create_status_fetcher("1.2.3.4")
+    assert fetcher() == mock_get_status.return_value
+
+
 @pytest.fixture(name="mock_app")
-def _mock_app():
-    with mock.patch("py_air_control_exporter.app.create_app") as mock_create_app:
-        mock_create_app.return_value = mock.Mock()
-        yield mock_create_app.return_value
+def _mock_app(mocker):
+    yield mocker.patch(
+        "py_air_control_exporter.app.create_app", return_value=mock.Mock()
+    ).return_value
+
+
+@pytest.fixture(name="mock_create_status_fetcher")
+def _mock_create_status_fetcher(mocker):
+    yield mocker.patch(
+        "py_air_control_exporter.main.create_status_fetcher",
+        autospec=True,
+    )

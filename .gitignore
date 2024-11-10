@@ -1,5 +1,6 @@
 # direnv
 .envrc
+.direnv
 
 # Python
 __pycache__/

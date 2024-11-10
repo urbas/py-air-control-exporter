@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "py-air-control-exporter"
+version = "0.3.2"
+description = "Exports air quality metrics to Prometheus"
+authors = [
+    { name = "Matej Urbas", email = "matej.urbas@gmail.com" },
+]
+license = { text = "MIT license" }
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["py-air-control-exporter", "py-air-control", "prometheus", "exporter"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "click>=7.0.0",
+    "Flask>=1.0.0",
+    "prometheus_client>=0.8.0",
+    "py-air-control>=2.0.0",
+]
+
+[project.scripts]
+py-air-control-exporter = "py_air_control_exporter.main:main"
+
+[project.urls]
+Homepage = "https://github.com/urbas/py-air-control-exporter"
+
+[tool.black]
+line-length = 88
+
+[tool.flake8]
+max-line-length = 88
+
+[tool.hatch.build.targets.wheel]
+packages = ["py_air_control_exporter"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "py_air_control_exporter",
+    "test",
+    "CHANGELOG.md",
+]
