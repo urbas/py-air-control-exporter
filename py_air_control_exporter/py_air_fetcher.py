@@ -3,7 +3,7 @@ from os import environ
 from pyairctrl import coap_client, http_client, plain_coap_client
 
 from py_air_control_exporter.logging import LOG
-from py_air_control_exporter.metrics import AirControlStatus, Status, Filters, Filter
+from py_air_control_exporter.metrics import AirControlStatus, Filter, Filters, Status
 
 HOST_ENV_VAR = "PY_AIR_CONTROL_HOST"
 PROTOCOL_ENV_VAR = "PY_AIR_CONTROL_PROTOCOL"
@@ -14,7 +14,8 @@ _FAN_SPEED_TO_INT = {"s": 0, "1": 1, "2": 2, "3": 3, "t": 4}
 
 
 def get_status(
-    host: str | None = None, protocol: str | None = None
+    host: str | None = None,
+    protocol: str | None = None,
 ) -> AirControlStatus | None:
     try:
         host = host or environ[HOST_ENV_VAR]
@@ -64,7 +65,8 @@ def create_filter_info(filters_data: dict) -> Filters:
         if key.startswith("fltsts"):
             filter_id = key[6:]
             filters[filter_id] = Filter(
-                hours=value, type=filters_data.get(f"fltt{filter_id}", "")
+                hours=value,
+                filter_type=filters_data.get(f"fltt{filter_id}", ""),
             )
 
     return Filters(filters=filters)

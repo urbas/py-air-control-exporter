@@ -1,6 +1,6 @@
 import itertools
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional
 
 import prometheus_client.core
 from prometheus_client import registry
@@ -10,28 +10,28 @@ from py_air_control_exporter.logging import LOG
 
 @dataclass
 class Status:
-    fan_speed: float  # Integer representation of fan speed
+    fan_speed: float
     iaql: float  # IAI allergen index
-    is_manual: bool  # True if in manual mode
-    is_on: bool  # True if powered on
-    pm25: float  # PM2.5 value
+    is_manual: bool
+    is_on: bool
+    pm25: float
 
 
 @dataclass
 class Filter:
-    hours: float  # Hours remaining
-    type: str  # Filter type
+    hours: float  # Hours remaining before replacement
+    filter_type: str
 
 
 @dataclass
 class Filters:
-    filters: Dict[str, Filter]  # Filter ID to Filter info
+    filters: dict[str, Filter]
 
 
 @dataclass
 class AirControlStatus:
-    status: Optional[Status]
-    filters: Optional[Filters]
+    status: Status | None
+    filters: Filters | None
 
 
 StatusFetcher = Callable[[], AirControlStatus | None]
@@ -65,11 +65,11 @@ class PyAirControlCollector(registry.Collector):
                 "py_air_control_sampling_error",
                 "Counts the number of times sampling air quality metrics failed.",
                 value=self._error_counter,
-            )
+            ),
         ]
 
 
-def _get_status_metrics(status: Optional[Status]):
+def _get_status_metrics(status: Status | None):
     if status is None:
         LOG.warning("Could not retrieve the status from py-air-control.")
         return []
@@ -106,7 +106,7 @@ def _get_status_metrics(status: Optional[Status]):
     ]
 
 
-def _get_filters_metrics(filters: Optional[Filters]):
+def _get_filters_metrics(filters: Filters | None):
     if filters is None:
         LOG.warning("Could not retrieve filter information from py-air-control.")
         return []
@@ -120,7 +120,7 @@ def _get_filters_metrics(filters: Optional[Filters]):
 
     for filter_id, filter_info in filters.filters.items():
         filter_metric_family.add_metric(
-            [filter_id, filter_info.type],
+            [filter_id, filter_info.filter_type],
             filter_info.hours,
         )
 

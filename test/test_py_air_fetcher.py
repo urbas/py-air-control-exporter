@@ -1,15 +1,15 @@
 import logging
+from test import status_responses
 from unittest import mock
 
 import pytest
 
 from py_air_control_exporter import metrics, py_air_fetcher
-from test import status_responses
 
 
 def test_metrics_no_host_provided(caplog):
     """
-    error logs explain that the purifier host has to be provided through an env var
+    Error logs explain that the purifier host has to be provided through an env var
     """
     assert py_air_fetcher.get_status() is None
     assert "Please specify the host address" in caplog.text
@@ -17,7 +17,7 @@ def test_metrics_no_host_provided(caplog):
 
 
 def test_metrics_pyairctrl_failure(mock_http_client, caplog):
-    """error logs explain that there was a failure getting the status from pyairctrl"""
+    """Error logs explain that there was a failure getting the status from pyairctrl"""
     mock_http_client["get_status"].side_effect = Exception("Some foobar error")
     assert py_air_fetcher.get_status(host="1.2.3.4", protocol="http") is None
     assert "Could not read values from air control device" in caplog.text
@@ -25,7 +25,7 @@ def test_metrics_pyairctrl_failure(mock_http_client, caplog):
 
 
 def test_metrics_unknown_client(caplog):
-    """error logs explain that the chosen protocol is unknown"""
+    """Error logs explain that the chosen protocol is unknown"""
     assert py_air_fetcher.get_status(host="1.2.3.4", protocol="foobar") is None
     assert "Unknown protocol 'foobar'" in caplog.text
 
@@ -50,15 +50,16 @@ def test_get_client_plain_coap_protocol(mock_plain_coap_client):
     mock_plain_coap_client.assert_called_with("1.2.3.4")
 
 
-def test_get_status(mock_http_client):
+@pytest.mark.usefixtures("mock_http_client")
+def test_get_status():
     assert py_air_fetcher.get_status("1.2.3.4", "http") == metrics.AirControlStatus(
         status=metrics.Status(fan_speed=0, iaql=1, is_manual=True, is_on=True, pm25=2),
         filters=metrics.Filters(
             filters={
-                "0": metrics.Filter(hours=0, type=""),
-                "1": metrics.Filter(hours=185, type="A3"),
-                "2": metrics.Filter(hours=2228, type="C7"),
-            }
+                "0": metrics.Filter(hours=0, filter_type=""),
+                "1": metrics.Filter(hours=185, filter_type="A3"),
+                "2": metrics.Filter(hours=2228, filter_type="C7"),
+            },
         ),
     )
 
@@ -71,7 +72,7 @@ def _log_level_error(caplog):
 @pytest.fixture(name="mock_http_client")
 def _mock_http_client(mocker):
     mocker.patch("pyairctrl.http_client.HTTPAirClient.__init__", return_value=None)
-    yield {
+    return {
         "get_status": mocker.patch(
             "pyairctrl.http_client.HTTPAirClient.get_status",
             return_value=status_responses.SLEEP_STATUS,
