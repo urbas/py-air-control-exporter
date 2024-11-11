@@ -3,7 +3,7 @@ from os import environ
 from pyairctrl import coap_client, http_client, plain_coap_client
 
 from py_air_control_exporter.logging import LOG
-from py_air_control_exporter.metrics import AirControlStatus, Filter, Filters, Status
+from py_air_control_exporter.metrics import Filter, Status, TargetReading
 
 HOST_ENV_VAR = "PY_AIR_CONTROL_HOST"
 PROTOCOL_ENV_VAR = "PY_AIR_CONTROL_PROTOCOL"
@@ -13,10 +13,10 @@ PLAIN_COAP_PROTOCOL = "plain_coap"
 _FAN_SPEED_TO_INT = {"s": 0, "1": 1, "2": 2, "3": 3, "t": 4}
 
 
-def get_status(
+def get_reading(
     host: str | None = None,
     protocol: str | None = None,
-) -> AirControlStatus | None:
+) -> TargetReading | None:
     try:
         host = host or environ[HOST_ENV_VAR]
     except KeyError:
@@ -39,7 +39,7 @@ def get_status(
         status = create_status(status_data)
         filters = create_filter_info(filters_data)
 
-        return AirControlStatus(status=status, filters=filters)
+        return TargetReading(status=status, filters=filters)
     except Exception as ex:
         LOG.error(
             "Could not read values from air control device %s. Error: %s",
@@ -59,8 +59,8 @@ def create_status(status_data: dict) -> Status:
     )
 
 
-def create_filter_info(filters_data: dict) -> Filters:
-    filters = {}
+def create_filter_info(filters_data: dict) -> dict[str, Filter]:
+    filters: dict[str, Filter] = {}
     for key, value in filters_data.items():
         if key.startswith("fltsts"):
             filter_id = key[6:]
@@ -69,7 +69,7 @@ def create_filter_info(filters_data: dict) -> Filters:
                 filter_type=filters_data.get(f"fltt{filter_id}", ""),
             )
 
-    return Filters(filters=filters)
+    return filters
 
 
 def get_client(protocol, host):
