@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "py-air-control-exporter"
-version = "0.3.2"
+version = "0.4.0"
 description = "Exports air quality metrics to Prometheus"
 authors = [
     { name = "Matej Urbas", email = "matej.urbas@gmail.com" },
 ]
 license = { text = "MIT license" }
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.12"
 keywords = ["py-air-control-exporter", "py-air-control", "prometheus", "exporter"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -35,11 +35,20 @@ py-air-control-exporter = "py_air_control_exporter.main:main"
 [project.urls]
 Homepage = "https://github.com/urbas/py-air-control-exporter"
 
-[tool.black]
+[tool.ruff]
 line-length = 88
-
-[tool.flake8]
-max-line-length = 88
+select = ["I", "ALL"]
+ignore = [
+    "ANN", # Missing type annotation
+    "BLE", # blind exception
+    "COM812", # Trailing comma missing
+    "D", # pydocstyle
+    "INP", # implicit-namespace-packagepydocstyle
+    "ISC001", # Implicitly concatenated string literals on one line
+    "S101", # Use of `assert` detected
+    "PT005", # fixture with leading `_` returns a value
+    "PLR2004", # magic value in comparison
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["py_air_control_exporter"]

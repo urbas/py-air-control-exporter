@@ -1,5 +1,6 @@
-import click
 import logging
+
+import click
 
 from py_air_control_exporter import app, metrics, py_air_fetcher
 from py_air_control_exporter.logging import LOG
@@ -7,11 +8,17 @@ from py_air_control_exporter.logging import LOG
 
 @click.command()
 @click.option(
-    "-v", "--verbose", default=0, count=True, help="Increase verbosity level."
+    "-v",
+    "--verbose",
+    default=0,
+    count=True,
+    help="Increase verbosity level.",
 )
 @click.option("-q", "--quiet", default=0, count=True, help="Decrease verbosity level.")
 @click.option(
-    "--host", required=True, help="The hostname of the air purifier to monitor."
+    "--host",
+    required=True,
+    help="The hostname of the air purifier to monitor.",
 )
 @click.option(
     "--protocol",
@@ -29,7 +36,7 @@ from py_air_control_exporter.logging import LOG
 )
 @click.option(
     "--listen-address",
-    default="0.0.0.0",
+    default="127.0.0.1",
     help="The address on which to listen for HTTP requests.",
     show_default=True,
 )
@@ -39,7 +46,7 @@ from py_air_control_exporter.logging import LOG
     help="The port on which to listen for HTTP requests.",
     show_default=True,
 )
-def main(host, protocol, listen_address, listen_port, verbose, quiet):
+def main(host, protocol, listen_address, listen_port, verbose, quiet):  # noqa: PLR0913
     setup_logging(verbose - quiet)
     LOG.info("Listening on %s:%d", listen_address, listen_port)
     status_fetcher = create_status_fetcher(host, protocol)
@@ -50,12 +57,14 @@ def setup_logging(verbosity_level: int) -> None:
     """Configure logging based on verbosity level."""
     logging.basicConfig(format="%(levelname)s %(name)s: %(message)s")
     log_level = min(
-        max(logging.DEBUG, logging.WARNING - (verbosity_level * 10)), logging.ERROR
+        max(logging.DEBUG, logging.WARNING - (verbosity_level * 10)),
+        logging.ERROR,
     )
     logging.getLogger().setLevel(log_level)
 
 
 def create_status_fetcher(
-    host: str, protocol: str | None = None
+    host: str,
+    protocol: str | None = None,
 ) -> metrics.StatusFetcher:
     return lambda: py_air_fetcher.get_status(host, protocol)
