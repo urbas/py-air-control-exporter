@@ -1,0 +1,7 @@
+targets:
+  foo:
+    host: 1.2.3.4
+    protocol: coap
+  bar:
+    host: 1.2.3.5
+    protocol: http

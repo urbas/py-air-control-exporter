@@ -5,6 +5,7 @@ import pytest
 from py_air_control_exporter import metrics
 
 
-@pytest.fixture(name="mock_fetcher")
-def _mock_fetcher():
-    return mock.MagicMock(spec=metrics.StatusFetcher)
+@pytest.fixture(name="mock_target")
+def _mock_target():
+    mock_func = mock.MagicMock()
+    return metrics.Target(host="foo", name="some-name", fetcher=mock_func), mock_func

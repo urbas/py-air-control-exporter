@@ -22,6 +22,7 @@
             flask
             prometheus-client
             py-air-control
+            pyyaml
           ];
 
           installCheckInputs = with python3.pkgs; [
@@ -34,23 +35,19 @@
       in {
         packages.default = pkg;
         devShells.default = mkShell {
-          inputsFrom = [
-            (pkg.overrideAttrs (oldAttrs: {
-              nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ])
-                ++ (with python3.pkgs; [
-                  ipython
-                  nixfmt
-                  pip
-                  pyright
-                  pytest
-                  pytest-cov
-                  pytest-mock
-                  ruff
-                  twine
-                  types-pyyaml
-                ]);
-            }))
+          packages = with python3.pkgs; [
+            ipython
+            nixfmt
+            pip
+            pyright
+            pytest
+            pytest-cov
+            pytest-mock
+            ruff
+            twine
+            types-pyyaml
           ];
+          inputsFrom = [ pkg ];
         };
       });
 }

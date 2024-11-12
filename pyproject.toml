@@ -11,7 +11,7 @@ authors = [
 ]
 license = { text = "MIT license" }
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 keywords = ["py-air-control-exporter", "py-air-control", "prometheus", "exporter"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -27,6 +27,7 @@ dependencies = [
     "Flask>=1.0.0",
     "prometheus_client>=0.8.0",
     "py-air-control>=2.0.0",
+    "PyYAML>=6.0.0",
 ]
 
 [project.scripts]
