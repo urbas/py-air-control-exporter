@@ -32,11 +32,7 @@ from py_air_control_exporter.logging import LOG
     "--protocol",
     default=http_philips.HTTP_PROTOCOL,
     type=click.Choice(
-        [
-            http_philips.HTTP_PROTOCOL,
-            http_philips.COAP_PROTOCOL,
-            http_philips.PLAIN_COAP_PROTOCOL,
-        ],
+        [http_philips.HTTP_PROTOCOL],
         case_sensitive=False,
     ),
     show_default=True,
