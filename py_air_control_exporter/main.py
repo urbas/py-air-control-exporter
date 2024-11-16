@@ -90,7 +90,7 @@ def load_config(config_path: Path | None) -> dict[str, Any]:
 
 def create_targets(
     targets_config: dict[str, dict] | None = None,
-) -> dict[str, metrics.Target]:
+) -> dict[str, metrics.Target] | None:
     targets = {}
 
     if targets_config:
@@ -100,6 +100,16 @@ def create_targets(
                 target_name=name,
             )
             protocol = target_config["protocol"]
+            
+            if protocol not in fetcher_registry.KNOWN_FETCHERS:
+                LOG.error(
+                    "Unknown protocol '%s' for target '%s'. Known protocols: %s",
+                    protocol,
+                    name,
+                    ", ".join(fetcher_registry.KNOWN_FETCHERS.keys()),
+                )
+                return None
+                
             targets[name] = metrics.Target(
                 host=fetcher_config.target_host,
                 name=fetcher_config.target_name,
