@@ -20,7 +20,7 @@ def test_unknown_no_targets(tmp_path, caplog):
     config.write_text(config_content)
     result = CliRunner().invoke(main.main, [f"--config={config}"])
     assert result.exit_code == 1
-    assert "No targets specified." in caplog.at_level(logging.ERROR).text
+    assert "No targets specified." in caplog.text
 
 
 def test_unknown_protocol_exit_code(tmp_path):
