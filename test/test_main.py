@@ -20,7 +20,7 @@ def test_main(mock_create_app, mock_create_targets):
             "--host",
             "192.168.1.123",
             "--protocol",
-            "coap",
+            "http",
             "--listen-address",
             "1.2.3.4",
             "--listen-port",
@@ -29,7 +29,7 @@ def test_main(mock_create_app, mock_create_targets):
     )
     assert result.exit_code == 0
     mock_create_targets.assert_called_once_with(
-        {"192.168.1.123": {"host": "192.168.1.123", "protocol": "coap"}}
+        {"192.168.1.123": {"host": "192.168.1.123", "protocol": "http"}}
     )
     expected_targets = mock_create_targets.return_value
     mock_create_app.assert_called_once_with(expected_targets)
@@ -91,7 +91,7 @@ def test_create_targets(mocker):
     )
 
     targets_config = {
-        "foo": {"host": "1.2.3.4", "protocol": "coap"},
+        "foo": {"host": "1.2.3.4", "protocol": "http"},
         "bar": {"host": "1.2.3.5", "protocol": "http"},
     }
     targets = main.create_targets(targets_config)
@@ -102,11 +102,11 @@ def test_create_targets(mocker):
 
     # Call first fetcher and verify arguments
     targets["foo"].fetcher()
-    mock_get_reading.assert_called_with("1.2.3.4", "coap")
+    mock_get_reading.assert_called_with("1.2.3.4")
 
     # Call second fetcher and verify arguments
     targets["bar"].fetcher()
-    mock_get_reading.assert_called_with("1.2.3.5", "http")
+    mock_get_reading.assert_called_with("1.2.3.5")
 
 
 @pytest.fixture(name="mock_create_app")
