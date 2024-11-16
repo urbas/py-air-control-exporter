@@ -13,7 +13,7 @@ pip install py-air-control-exporter
 ## Running
 
 ```bash
-py-air-control-exporter --host 192.168.1.105 --protocol <http|coap|plain_coap>
+py-air-control-exporter --host 192.168.1.105 --protocol http
 ```
 
 This will serve metrics at `http://0.0.0.0:9896/metrics`.

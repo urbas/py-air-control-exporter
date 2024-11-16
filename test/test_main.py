@@ -15,6 +15,7 @@ def test_help():
 
 
 def test_unknown_no_targets(tmp_path, caplog):
+    caplog.set_level(logging.ERROR)
     config = tmp_path / "config.yaml"
     config_content = yaml.dump({"targets": {}})
     config.write_text(config_content)

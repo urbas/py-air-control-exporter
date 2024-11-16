@@ -29,11 +29,14 @@ class TargetReading:
     filters: dict[str, Filter] | None
 
 
+Fetcher = Callable[[], TargetReading | None]
+
+
 @dataclass(frozen=True)
 class Target:
     host: str
     name: str
-    fetcher: Callable[[], TargetReading | None]
+    fetcher: Fetcher
 
 
 class PyAirControlCollector(registry.Collector):

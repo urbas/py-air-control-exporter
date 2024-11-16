@@ -1,4 +1,5 @@
 import logging
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -66,6 +67,14 @@ def main(host, name, protocol, listen_address, listen_port, config, verbose, qui
         targets_config[name or host] = {"host": host, "protocol": protocol}
 
     targets = create_targets(targets_config)
+
+    if targets is None:
+        sys.exit(1)
+
+    if not targets:
+        LOG.error("No targets specified. Please specify at least one target.")
+        sys.exit(1)
+
     app.create_app(targets).run(host=listen_address, port=listen_port)
 
 
@@ -100,7 +109,7 @@ def create_targets(
                 target_name=name,
             )
             protocol = target_config["protocol"]
-            
+
             if protocol not in fetcher_registry.KNOWN_FETCHERS:
                 LOG.error(
                     "Unknown protocol '%s' for target '%s'. Known protocols: %s",
@@ -109,7 +118,7 @@ def create_targets(
                     ", ".join(fetcher_registry.KNOWN_FETCHERS.keys()),
                 )
                 return None
-                
+
             targets[name] = metrics.Target(
                 host=fetcher_config.target_host,
                 name=fetcher_config.target_name,
