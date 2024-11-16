@@ -49,7 +49,11 @@ class PyAirControlCollector(registry.Collector):
             try:
                 target_reading = target.fetcher()
             except Exception as ex:
-                LOG.error("Failed to sample the air quality. Error: %s", ex)
+                LOG.error(
+                    "Failed to sample the air quality from target '%s'. Error: %s",
+                    name,
+                    ex,
+                )
                 targets_with_errors.add(name)
                 continue
 

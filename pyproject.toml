@@ -38,8 +38,8 @@ Homepage = "https://github.com/urbas/py-air-control-exporter"
 
 [tool.ruff]
 line-length = 88
-select = ["I", "ALL"]
-ignore = [
+lint.select = ["I", "ALL"]
+lint.ignore = [
     "ANN", # Missing type annotation
     "BLE", # blind exception
     "COM812", # Trailing comma missing

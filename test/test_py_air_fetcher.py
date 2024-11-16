@@ -1,10 +1,10 @@
 import logging
-from test import status_responses
 from unittest import mock
 
 import pytest
 
 from py_air_control_exporter import metrics, py_air_fetcher
+from test import status_responses
 
 
 def test_metrics_no_host_provided(caplog):
