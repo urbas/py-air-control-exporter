@@ -1,6 +1,8 @@
+import logging
 from unittest import mock
 
 import pytest
+import yaml
 from click.testing import CliRunner
 
 from py_air_control_exporter import main
@@ -12,6 +14,26 @@ def test_help():
     assert "Usage" in result.stdout
 
 
+def test_unknown_no_targets(tmp_path, caplog):
+    caplog.set_level(logging.ERROR)
+    config = tmp_path / "config.yaml"
+    config_content = yaml.dump({"targets": {}})
+    config.write_text(config_content)
+    result = CliRunner().invoke(main.main, [f"--config={config}"])
+    assert result.exit_code == 1
+    assert "No targets specified." in caplog.text
+
+
+def test_unknown_protocol_exit_code(tmp_path):
+    config = tmp_path / "config.yaml"
+    config_content = yaml.dump(
+        {"targets": {"target1": {"host": "1.2.3.4", "protocol": "foobar"}}},
+    )
+    config.write_text(config_content)
+    result = CliRunner().invoke(main.main, [f"--config={config}"])
+    assert result.exit_code == 1
+
+
 def test_main(mock_create_app, mock_create_targets):
     """Check that the exporter Flask app is created with all the given parameters"""
     result = CliRunner().invoke(
@@ -20,7 +42,7 @@ def test_main(mock_create_app, mock_create_targets):
             "--host",
             "192.168.1.123",
             "--protocol",
-            "coap",
+            "http",
             "--listen-address",
             "1.2.3.4",
             "--listen-port",
@@ -29,7 +51,7 @@ def test_main(mock_create_app, mock_create_targets):
     )
     assert result.exit_code == 0
     mock_create_targets.assert_called_once_with(
-        {"192.168.1.123": {"host": "192.168.1.123", "protocol": "coap"}}
+        {"192.168.1.123": {"host": "192.168.1.123", "protocol": "http"}}
     )
     expected_targets = mock_create_targets.return_value
     mock_create_app.assert_called_once_with(expected_targets)
@@ -44,6 +66,15 @@ def test_unknown_protocol():
     )
     assert result.exit_code != 0
     assert "--protocol" in result.stderr
+
+
+def test_unknown_protocol_in_config(caplog):
+    """Check that error is logged when config contains unknown protocol"""
+    targets_config = {"test": {"host": "1.2.3.4", "protocol": "invalid"}}
+    result = main.create_targets(targets_config)
+    assert result is None
+    assert "Unknown protocol 'invalid' for target 'test'" in caplog.text
+    assert "Known protocols:" in caplog.text
 
 
 @pytest.mark.usefixtures("mock_create_app")
@@ -86,12 +117,12 @@ def test_default_parameters(mock_create_app, mock_create_targets):
 def test_create_targets(mocker):
     """Check that the targets dictionary is created and ready to fetch."""
     mock_get_reading = mocker.patch(
-        "py_air_control_exporter.py_air_fetcher.get_reading",
+        "py_air_control_exporter.fetchers.http_philips.get_reading",
         autospec=True,
     )
 
     targets_config = {
-        "foo": {"host": "1.2.3.4", "protocol": "coap"},
+        "foo": {"host": "1.2.3.4", "protocol": "http"},
         "bar": {"host": "1.2.3.5", "protocol": "http"},
     }
     targets = main.create_targets(targets_config)
@@ -102,11 +133,11 @@ def test_create_targets(mocker):
 
     # Call first fetcher and verify arguments
     targets["foo"].fetcher()
-    mock_get_reading.assert_called_with("1.2.3.4", "coap")
+    mock_get_reading.assert_called_with("1.2.3.4")
 
     # Call second fetcher and verify arguments
     targets["bar"].fetcher()
-    mock_get_reading.assert_called_with("1.2.3.5", "http")
+    mock_get_reading.assert_called_with("1.2.3.5")
 
 
 @pytest.fixture(name="mock_create_app")

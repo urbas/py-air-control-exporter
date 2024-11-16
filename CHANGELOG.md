@@ -1,8 +1,9 @@
 # 0.4.0 (upcoming)
 
 - By default `py-air-control-exporter` now listens on port `127.0.0.1`.
-- Support to provide multiple air quality sensors in a config file.
-- All metrics now have labels `host` and `name`.
+- Added support for multiple air quality sensors (targets) in a config file.
+- Added labels `host` and `name` to all metrics.
+- Removed support for broken `coap` and `plain_coap` protocols.
 
 # 0.3.1
 

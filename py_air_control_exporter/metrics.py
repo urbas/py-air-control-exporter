@@ -1,39 +1,19 @@
 import itertools
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 import prometheus_client.core
 from prometheus_client import Metric, registry
 
+from py_air_control_exporter import fetchers_api
 from py_air_control_exporter.logging import LOG
-
-
-@dataclass(frozen=True)
-class Status:
-    fan_speed: float
-    iaql: float  # IAI allergen index
-    is_manual: bool
-    is_on: bool
-    pm25: float
-
-
-@dataclass(frozen=True)
-class Filter:
-    hours: float  # Hours remaining before replacement
-    filter_type: str
-
-
-@dataclass(frozen=True)
-class TargetReading:
-    status: Status | None
-    filters: dict[str, Filter] | None
 
 
 @dataclass(frozen=True)
 class Target:
     host: str
     name: str
-    fetcher: Callable[[], TargetReading | None]
+    fetcher: fetchers_api.Fetcher
 
 
 class PyAirControlCollector(registry.Collector):
@@ -43,7 +23,7 @@ class PyAirControlCollector(registry.Collector):
 
     def collect(self):
         targets_with_errors: set[str] = set()
-        target_readings: dict[str, TargetReading] = {}
+        target_readings: dict[str, fetchers_api.TargetReading] = {}
         for name, target in self._targets.items():
             target_reading = None
             try:
@@ -65,7 +45,8 @@ class PyAirControlCollector(registry.Collector):
 
         return itertools.chain(
             self._sampling_error(targets_with_errors),
-            self._get_status_metrics(target_readings),
+            self._air_quality_metrics(target_readings),
+            self._control_info_metrics(target_readings),
             self._get_filters_metrics(target_readings),
         )
 
@@ -82,13 +63,37 @@ class PyAirControlCollector(registry.Collector):
             sampling_error.add_metric([target.host, target.name], error_counter)
         return [sampling_error]
 
-    def _get_status_metrics(self, statuses: dict[str, TargetReading]):
-        air_quality = prometheus_client.core.GaugeMetricFamily(
+    def _air_quality_metrics(self, statuses: dict[str, fetchers_api.TargetReading]):
+        iaql = prometheus_client.core.GaugeMetricFamily(
             "py_air_control_air_quality",
             "IAI allergen index from 1 to 12, where 1 indicates best air quality.",
             labels=["host", "name"],
         )
 
+        pm25 = prometheus_client.core.GaugeMetricFamily(
+            "py_air_control_pm25",
+            "Micrograms of PM2.5 particles per cubic metre.",
+            labels=["host", "name"],
+        )
+
+        for name, full_status in statuses.items():
+            air_quality = full_status.air_quality
+            if air_quality is None:
+                LOG.info("No air quality information from air quality host '%s'.", name)
+                continue
+
+            target = self._targets[name]
+            LOG.debug(
+                "Got the following air quality information from host '%s': %s",
+                target.host,
+                air_quality,
+            )
+            iaql.add_metric([target.host, target.name], air_quality.iaql)
+            pm25.add_metric([target.host, target.name], air_quality.pm25)
+
+        return [iaql, pm25]
+
+    def _control_info_metrics(self, statuses: dict[str, fetchers_api.TargetReading]):
         is_manual = prometheus_client.core.GaugeMetricFamily(
             "py_air_control_is_manual",
             "Value '1' indicates manual mode while value '0' indicates automatic mode.",
@@ -102,12 +107,6 @@ class PyAirControlCollector(registry.Collector):
             labels=["host", "name"],
         )
 
-        pm25 = prometheus_client.core.GaugeMetricFamily(
-            "py_air_control_pm25",
-            "Micrograms of PM2.5 particles per cubic metre.",
-            labels=["host", "name"],
-        )
-
         speed = prometheus_client.core.GaugeMetricFamily(
             "py_air_control_speed",
             "The fan speed setting (0 is sleep, 1-3 correspond to level settings, "
@@ -116,28 +115,28 @@ class PyAirControlCollector(registry.Collector):
         )
 
         for name, full_status in statuses.items():
-            status = full_status.status
-            if status is None:
-                LOG.info("No status from air quality host '%s'.", name)
+            control_info = full_status.control_info
+            if control_info is None:
+                LOG.info("No control info for air quality host '%s'.", name)
                 continue
 
             target = self._targets[name]
             LOG.debug(
-                "Got the following status from host '%s': %s",
+                "Got the following control info from host '%s': %s",
                 target.host,
-                status,
+                control_info,
             )
-            air_quality.add_metric([target.host, target.name], status.iaql)
             is_manual.add_metric(
-                [target.host, target.name], 1 if status.is_manual else 0
+                [target.host, target.name], 1 if control_info.is_manual else 0
             )
-            is_on.add_metric([target.host, target.name], 1 if status.is_on else 0)
-            pm25.add_metric([target.host, target.name], status.pm25)
-            speed.add_metric([target.host, target.name], status.fan_speed)
+            is_on.add_metric([target.host, target.name], 1 if control_info.is_on else 0)
+            speed.add_metric([target.host, target.name], control_info.fan_speed)
 
-        return [air_quality, is_manual, is_on, pm25, speed]
+        return [is_manual, is_on, speed]
 
-    def _get_filters_metrics(self, target_readings: dict[str, TargetReading]):
+    def _get_filters_metrics(
+        self, target_readings: dict[str, fetchers_api.TargetReading]
+    ):
         filter_metric_family = prometheus_client.core.GaugeMetricFamily(
             "py_air_control_filter_hours",
             "The number of values left before the filter has to be replaced or cleaned",
