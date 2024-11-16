@@ -46,6 +46,17 @@ def test_unknown_protocol():
     assert "--protocol" in result.stderr
 
 
+def test_unknown_protocol_in_config(caplog):
+    """Check that error is logged when config contains unknown protocol"""
+    targets_config = {
+        "test": {"host": "1.2.3.4", "protocol": "invalid"}
+    }
+    result = main.create_targets(targets_config)
+    assert result is None
+    assert "Unknown protocol 'invalid' for target 'test'" in caplog.text
+    assert "Known protocols:" in caplog.text
+
+
 @pytest.mark.usefixtures("mock_create_app")
 def test_config_file(mock_create_targets):
     """Check that the exporter Flask app is created with config file parameters"""
