@@ -86,7 +86,7 @@ def test_default_parameters(mock_create_app, mock_create_targets):
 def test_create_targets(mocker):
     """Check that the targets dictionary is created and ready to fetch."""
     mock_get_reading = mocker.patch(
-        "py_air_control_exporter.py_air_fetcher.get_reading",
+        "py_air_control_exporter.fetchers.http_philips.get_reading",
         autospec=True,
     )
 

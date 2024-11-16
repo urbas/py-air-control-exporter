@@ -5,7 +5,8 @@ from typing import Any
 import click
 import yaml
 
-from py_air_control_exporter import app, metrics, py_air_fetcher
+from py_air_control_exporter import app, metrics
+from py_air_control_exporter.fetchers import http_philips
 from py_air_control_exporter.logging import LOG
 
 
@@ -29,12 +30,12 @@ from py_air_control_exporter.logging import LOG
 )
 @click.option(
     "--protocol",
-    default=py_air_fetcher.HTTP_PROTOCOL,
+    default=http_philips.HTTP_PROTOCOL,
     type=click.Choice(
         [
-            py_air_fetcher.HTTP_PROTOCOL,
-            py_air_fetcher.COAP_PROTOCOL,
-            py_air_fetcher.PLAIN_COAP_PROTOCOL,
+            http_philips.HTTP_PROTOCOL,
+            http_philips.COAP_PROTOCOL,
+            http_philips.PLAIN_COAP_PROTOCOL,
         ],
         case_sensitive=False,
     ),
@@ -103,7 +104,7 @@ def create_targets(
                 host=host_addr,
                 name=name,
                 fetcher=lambda h=host_addr,
-                p=target_config["protocol"]: py_air_fetcher.get_reading(h, p),
+                p=target_config["protocol"]: http_philips.get_reading(h, p),
             )
 
     return targets
