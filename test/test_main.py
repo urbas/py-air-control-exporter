@@ -1,6 +1,8 @@
+import logging
 from unittest import mock
 
 import pytest
+import yaml
 from click.testing import CliRunner
 
 from py_air_control_exporter import main
@@ -10,6 +12,25 @@ def test_help():
     result = CliRunner().invoke(main.main, ["--help"])
     assert result.exit_code == 0
     assert "Usage" in result.stdout
+
+
+def test_unknown_no_targets(tmp_path, caplog):
+    config = tmp_path / "config.yaml"
+    config_content = yaml.dump({"targets": {}})
+    config.write_text(config_content)
+    result = CliRunner().invoke(main.main, [f"--config={config}"])
+    assert result.exit_code == 1
+    assert "No targets specified." in caplog.at_level(logging.ERROR).text
+
+
+def test_unknown_protocol_exit_code(tmp_path):
+    config = tmp_path / "config.yaml"
+    config_content = yaml.dump(
+        {"targets": {"target1": {"host": "1.2.3.4", "protocol": "foobar"}}},
+    )
+    config.write_text(config_content)
+    result = CliRunner().invoke(main.main, [f"--config={config}"])
+    assert result.exit_code == 1
 
 
 def test_main(mock_create_app, mock_create_targets):
@@ -48,9 +69,7 @@ def test_unknown_protocol():
 
 def test_unknown_protocol_in_config(caplog):
     """Check that error is logged when config contains unknown protocol"""
-    targets_config = {
-        "test": {"host": "1.2.3.4", "protocol": "invalid"}
-    }
+    targets_config = {"test": {"host": "1.2.3.4", "protocol": "invalid"}}
     result = main.create_targets(targets_config)
     assert result is None
     assert "Unknown protocol 'invalid' for target 'test'" in caplog.text
