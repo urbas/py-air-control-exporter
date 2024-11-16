@@ -6,7 +6,7 @@ import click
 import yaml
 
 from py_air_control_exporter import app, metrics
-from py_air_control_exporter.fetchers import http_philips
+from py_air_control_exporter.fetchers import api, fetcher_registry
 from py_air_control_exporter.logging import LOG
 
 
@@ -30,9 +30,9 @@ from py_air_control_exporter.logging import LOG
 )
 @click.option(
     "--protocol",
-    default=http_philips.HTTP_PROTOCOL,
+    default="http",
     type=click.Choice(
-        [http_philips.HTTP_PROTOCOL],
+        tuple(fetcher_registry.KNOWN_FETCHERS.keys()),
         case_sensitive=False,
     ),
     show_default=True,
@@ -95,12 +95,15 @@ def create_targets(
 
     if targets_config:
         for name, target_config in targets_config.items():
-            host_addr = target_config["host"]
+            fetcher_config = api.FetcherCreatorArgs(
+                target_host=target_config["host"],
+                target_name=name,
+            )
+            protocol = target_config["protocol"]
             targets[name] = metrics.Target(
-                host=host_addr,
-                name=name,
-                fetcher=lambda h=host_addr,
-                p=target_config["protocol"]: http_philips.get_reading(h, p),
+                host=fetcher_config.target_host,
+                name=fetcher_config.target_name,
+                fetcher=fetcher_registry.KNOWN_FETCHERS[protocol](fetcher_config),
             )
 
     return targets
