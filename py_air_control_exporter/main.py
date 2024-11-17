@@ -1,11 +1,13 @@
 import logging
+import sys
 from pathlib import Path
 from typing import Any
 
 import click
 import yaml
 
-from py_air_control_exporter import app, metrics, py_air_fetcher
+from py_air_control_exporter import app, fetchers_api, metrics
+from py_air_control_exporter.fetchers import fetcher_registry
 from py_air_control_exporter.logging import LOG
 
 
@@ -29,13 +31,9 @@ from py_air_control_exporter.logging import LOG
 )
 @click.option(
     "--protocol",
-    default=py_air_fetcher.HTTP_PROTOCOL,
+    default="http",
     type=click.Choice(
-        [
-            py_air_fetcher.HTTP_PROTOCOL,
-            py_air_fetcher.COAP_PROTOCOL,
-            py_air_fetcher.PLAIN_COAP_PROTOCOL,
-        ],
+        tuple(fetcher_registry.KNOWN_FETCHERS.keys()),
         case_sensitive=False,
     ),
     show_default=True,
@@ -69,6 +67,14 @@ def main(host, name, protocol, listen_address, listen_port, config, verbose, qui
         targets_config[name or host] = {"host": host, "protocol": protocol}
 
     targets = create_targets(targets_config)
+
+    if targets is None:
+        sys.exit(1)
+
+    if not targets:
+        LOG.error("No targets specified. Please specify at least one target.")
+        sys.exit(1)
+
     app.create_app(targets).run(host=listen_address, port=listen_port)
 
 
@@ -93,17 +99,30 @@ def load_config(config_path: Path | None) -> dict[str, Any]:
 
 def create_targets(
     targets_config: dict[str, dict] | None = None,
-) -> dict[str, metrics.Target]:
+) -> dict[str, metrics.Target] | None:
     targets = {}
 
     if targets_config:
         for name, target_config in targets_config.items():
-            host_addr = target_config["host"]
+            fetcher_config = fetchers_api.FetcherCreatorArgs(
+                target_host=target_config["host"],
+                target_name=name,
+            )
+            protocol = target_config["protocol"]
+
+            if protocol not in fetcher_registry.KNOWN_FETCHERS:
+                LOG.error(
+                    "Unknown protocol '%s' for target '%s'. Known protocols: %s",
+                    protocol,
+                    name,
+                    ", ".join(fetcher_registry.KNOWN_FETCHERS.keys()),
+                )
+                return None
+
             targets[name] = metrics.Target(
-                host=host_addr,
-                name=name,
-                fetcher=lambda h=host_addr,
-                p=target_config["protocol"]: py_air_fetcher.get_reading(h, p),
+                host=fetcher_config.target_host,
+                name=fetcher_config.target_name,
+                fetcher=fetcher_registry.KNOWN_FETCHERS[protocol](fetcher_config),
             )
 
     return targets

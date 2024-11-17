@@ -5,18 +5,19 @@ from prometheus_client import Metric
 from prometheus_client.parser import text_string_to_metric_families
 from prometheus_client.samples import Sample
 
-from py_air_control_exporter import app, metrics
+from py_air_control_exporter import app, fetchers_api
 
 
 def test_metrics(mock_target):
     """Metrics endpoint produces the expected metrics"""
     target, mock_func = mock_target
-    mock_func.return_value = metrics.TargetReading(
-        status=metrics.Status(fan_speed=0, iaql=1, is_manual=True, is_on=True, pm25=2),
+    mock_func.return_value = fetchers_api.TargetReading(
+        air_quality=fetchers_api.AirQuality(iaql=1, pm25=2),
+        control_info=fetchers_api.ControlInfo(fan_speed=0, is_manual=True, is_on=True),
         filters={
-            "0": metrics.Filter(hours=0, filter_type=""),
-            "1": metrics.Filter(hours=185, filter_type="A3"),
-            "2": metrics.Filter(hours=2228, filter_type="C7"),
+            "0": fetchers_api.Filter(hours=0, filter_type=""),
+            "1": fetchers_api.Filter(hours=185, filter_type="A3"),
+            "2": fetchers_api.Filter(hours=2228, filter_type="C7"),
         },
     )
 
