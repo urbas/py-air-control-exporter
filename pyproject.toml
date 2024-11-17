@@ -45,11 +45,12 @@ lint.ignore = [
     "BLE", # blind exception
     "COM812", # Trailing comma missing
     "D", # pydocstyle
+    "EM101", # variables instead of string literals
     "INP", # implicit-namespace-packagepydocstyle
     "ISC001", # Implicitly concatenated string literals on one line
-    "S101", # Use of `assert` detected
-    "PT005", # fixture with leading `_` returns a value
     "PLR2004", # magic value in comparison
+    "PT005", # fixture with leading `_` returns a value
+    "S101", # Use of `assert` detected
 ]
 
 [tool.hatch.build.targets.wheel]
