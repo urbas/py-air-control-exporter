@@ -8,7 +8,8 @@ import yaml
 
 from py_air_control_exporter import app, fetchers_api, metrics
 from py_air_control_exporter.fetchers import fetcher_registry
-from py_air_control_exporter.logging import LOG
+
+LOG = logging.getLogger(__name__)
 
 
 @click.command()

@@ -9,6 +9,7 @@ from test import status_responses
 
 def test_metrics_pyairctrl_failure(mock_http_client, caplog):
     """Error logs explain that there was a failure getting the status from pyairctrl"""
+    caplog.set_level(logging.ERROR)
     mock_http_client["get_status"].side_effect = Exception("Some foobar error")
     assert http_philips.get_reading(host="1.2.3.4") is None
     assert "Could not read values from air control device" in caplog.text
