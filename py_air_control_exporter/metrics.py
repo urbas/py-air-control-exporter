@@ -1,4 +1,5 @@
 import itertools
+import logging
 from collections.abc import Iterable
 from dataclasses import dataclass
 
@@ -6,7 +7,8 @@ import prometheus_client.core
 from prometheus_client import Metric, registry
 
 from py_air_control_exporter import fetchers_api
-from py_air_control_exporter.logging import LOG
+
+LOG = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -34,6 +36,7 @@ class PyAirControlCollector(registry.Collector):
                     name,
                     ex,
                 )
+                LOG.debug("Exception stack trace:", exc_info=True)
                 targets_with_errors.add(name)
                 continue
 

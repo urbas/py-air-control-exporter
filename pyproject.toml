@@ -50,6 +50,7 @@ lint.ignore = [
     "S101", # Use of `assert` detected
     "PT005", # fixture with leading `_` returns a value
     "PLR2004", # magic value in comparison
+    "TRY400", # use logging.exception
 ]
 
 [tool.hatch.build.targets.wheel]

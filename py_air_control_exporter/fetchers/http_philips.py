@@ -1,7 +1,10 @@
+import logging
+
 from pyairctrl import http_client
 
 from py_air_control_exporter import fetchers_api
-from py_air_control_exporter.logging import LOG
+
+LOG = logging.getLogger(__name__)
 
 _FAN_SPEED_TO_INT = {"s": 0, "1": 1, "2": 2, "3": 3, "t": 4}
 
@@ -26,10 +29,9 @@ def get_reading(
         )
     except Exception as ex:
         LOG.error(
-            "Could not read values from air control device %s. Error: %s",
-            host,
-            ex,
+            "Could not read values from air control device %s. Error: %s", host, ex
         )
+        LOG.debug("Exception stack trace:", exc_info=True)
         return None
 
 
