@@ -11,7 +11,10 @@ def test_metrics_pyairctrl_failure(mock_http_client, caplog):
     """Error logs explain that there was a failure getting the status from pyairctrl"""
     caplog.set_level(logging.ERROR)
     mock_http_client["get_status"].side_effect = Exception("Some foobar error")
-    assert http_philips.get_reading(host="1.2.3.4") is None
+    assert http_philips.get_reading(host="1.2.3.4") == fetchers_api.TargetReading(
+        host="1.2.3.4",
+        has_errors=True,
+    )
     assert "Could not read values from air control device" in caplog.text
     assert "Some foobar error" in caplog.text
 
@@ -19,6 +22,7 @@ def test_metrics_pyairctrl_failure(mock_http_client, caplog):
 @pytest.mark.usefixtures("mock_http_client")
 def test_get_reading():
     assert http_philips.get_reading("1.2.3.4") == fetchers_api.TargetReading(
+        host="1.2.3.4",
         air_quality=fetchers_api.AirQuality(iaql=1, pm25=2),
         control_info=fetchers_api.ControlInfo(fan_speed=0, is_manual=True, is_on=True),
         filters={

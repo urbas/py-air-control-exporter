@@ -23,12 +23,14 @@ class Filter:
 
 @dataclass(frozen=True)
 class TargetReading:
-    air_quality: AirQuality | None
-    control_info: ControlInfo | None
-    filters: dict[str, Filter] | None
+    host: str
+    has_errors: bool = False
+    air_quality: AirQuality | None = None
+    control_info: ControlInfo | None = None
+    filters: dict[str, Filter] | None = None
 
 
-Fetcher = Callable[[], TargetReading | None]
+Fetcher = Callable[[], TargetReading]
 
 
 @dataclass(frozen=True)
