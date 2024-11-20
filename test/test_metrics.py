@@ -1,24 +1,42 @@
+from prometheus_client.samples import Sample
+
 from py_air_control_exporter import app, fetchers_api
+from test.conftest import get_samples
 
 
-def test_metrics_no_data(mock_target):
+def test_metrics(mock_readings_source):
+    """Metrics endpoint should produce some metrics"""
+    assert Sample(
+        "py_air_control_pm25", {"host": "1.2.3.4", "name": "full"}, value=5.0
+    ) in get_samples(app.create_app(mock_readings_source).test_client())
+
+
+def test_metrics_error(mock_readings_source):
     """Metrics endpoint should produce a sampling error counter on error"""
-    target, mock_func = mock_target
-    mock_func.return_value = None
-    test_client = app.create_app({"foo": target}).test_client()
-    response = test_client.get("/metrics")
-    assert (
-        b'py_air_control_sampling_error_total{host="foo",name="some-name"} 2.0\n'
-        in response.data
-    )
+    assert Sample(
+        "py_air_control_sampling_error_total",
+        {"host": "1.2.3.1", "name": "broken"},
+        value=2.0,
+    ) in get_samples(app.create_app(mock_readings_source).test_client())
 
 
-def test_metrics_empty(mock_target):
-    """Metrics endpoint should produce empty metrics on empty status"""
-    target, mock_func = mock_target
-    mock_func.return_value = fetchers_api.TargetReading(
-        air_quality=None, control_info=None, filters=None
-    )
-    test_client = app.create_app({"foo": target}).test_client()
-    response = test_client.get("/metrics")
-    assert b"HELP py_air_control_sampling_error_total" in response.data
+def test_metrics_no_data(mock_readings_source):
+    """
+    Metrics endpoint should produce only the error counter when target produces no data
+    """
+    mock_readings_source.return_value = {
+        "empty": fetchers_api.TargetReading(host="1.2.3.1")
+    }
+    assert [
+        Sample(
+            "py_air_control_sampling_error_total",
+            {"host": "1.2.3.1", "name": "empty"},
+            value=0.0,
+        )
+    ] == get_samples(app.create_app(mock_readings_source).test_client())
+
+
+def test_metrics_empty(mock_readings_source):
+    """Metrics endpoint should produce no metrics when there are no targets"""
+    mock_readings_source.return_value = {}
+    assert not get_samples(app.create_app(mock_readings_source).test_client())

@@ -13,9 +13,7 @@ def create_fetcher(config: fetchers_api.FetcherCreatorArgs) -> fetchers_api.Fetc
     return lambda target_host=config.target_host: get_reading(target_host)
 
 
-def get_reading(
-    host: str,
-) -> fetchers_api.TargetReading | None:
+def get_reading(host: str) -> fetchers_api.TargetReading:
     client = http_client.HTTPAirClient(host)
 
     try:
@@ -23,16 +21,19 @@ def get_reading(
         filters_data = client.get_filters() or {}
 
         return fetchers_api.TargetReading(
+            host=host,
+            has_errors=False,
             air_quality=create_air_quality(status_data),
             control_info=create_control_info(status_data),
             filters=create_filter_info(filters_data),
         )
+
     except Exception as ex:
         LOG.error(
             "Could not read values from air control device %s. Error: %s", host, ex
         )
         LOG.debug("Exception stack trace:", exc_info=True)
-        return None
+        return fetchers_api.TargetReading(host=host, has_errors=True)
 
 
 def create_air_quality(status_data: dict) -> fetchers_api.AirQuality:

@@ -1,13 +1,20 @@
 import logging
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import click
 import yaml
 
-from py_air_control_exporter import app, fetchers_api, metrics
-from py_air_control_exporter.fetchers import fetcher_registry
+from py_air_control_exporter import app, fetcher_registry, fetchers_api, metrics
+
+
+@dataclass(frozen=True)
+class Target:
+    host: str
+    fetcher: fetchers_api.Fetcher
+
 
 LOG = logging.getLogger(__name__)
 
@@ -34,8 +41,7 @@ LOG = logging.getLogger(__name__)
     "--protocol",
     default="http",
     type=click.Choice(
-        tuple(fetcher_registry.KNOWN_FETCHERS.keys()),
-        case_sensitive=False,
+        tuple(fetcher_registry.get_known_protocols()), case_sensitive=False
     ),
     show_default=True,
     help="The protocol to use when communicating with the air purifier "
@@ -76,7 +82,8 @@ def main(host, name, protocol, listen_address, listen_port, config, verbose, qui
         LOG.error("No targets specified. Please specify at least one target.")
         sys.exit(1)
 
-    app.create_app(targets).run(host=listen_address, port=listen_port)
+    readings_source = create_readings_source(targets)
+    app.create_app(readings_source).run(host=listen_address, port=listen_port)
 
 
 def setup_logging(verbosity_level: int) -> None:
@@ -98,9 +105,36 @@ def load_config(config_path: Path | None) -> dict[str, Any]:
         return yaml.safe_load(f)
 
 
+def create_readings_source(
+    targets: dict[str, Target],
+) -> metrics.ReadingsSource:
+    def _fetch() -> dict[str, fetchers_api.TargetReading]:
+        target_readings = {}
+        for name, target in targets.items():
+            target_reading = None
+            try:
+                target_reading = target.fetcher()
+            except Exception as ex:
+                LOG.error(
+                    "Failed to sample the air quality from target '%s'. Error: %s",
+                    name,
+                    ex,
+                )
+                LOG.debug("Exception stack trace:", exc_info=True)
+                continue
+
+            if target_reading is None:
+                continue
+
+            target_readings[name] = target_reading
+        return target_readings
+
+    return _fetch
+
+
 def create_targets(
     targets_config: dict[str, dict] | None = None,
-) -> dict[str, metrics.Target] | None:
+) -> dict[str, Target] | None:
     targets = {}
 
     if targets_config:
@@ -111,19 +145,18 @@ def create_targets(
             )
             protocol = target_config["protocol"]
 
-            if protocol not in fetcher_registry.KNOWN_FETCHERS:
+            try:
+                targets[name] = Target(
+                    host=fetcher_config.target_host,
+                    fetcher=fetcher_registry.create_fetcher(protocol, fetcher_config),
+                )
+            except fetcher_registry.UnknownProtocolError:
                 LOG.error(
                     "Unknown protocol '%s' for target '%s'. Known protocols: %s",
                     protocol,
                     name,
-                    ", ".join(fetcher_registry.KNOWN_FETCHERS.keys()),
+                    ", ".join(fetcher_registry.get_known_protocols()),
                 )
                 return None
-
-            targets[name] = metrics.Target(
-                host=fetcher_config.target_host,
-                name=fetcher_config.target_name,
-                fetcher=fetcher_registry.KNOWN_FETCHERS[protocol](fetcher_config),
-            )
 
     return targets
