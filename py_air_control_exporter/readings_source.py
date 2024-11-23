@@ -16,13 +16,13 @@ class _Target:
 
 
 def from_config(targets_config: dict[str, dict]) -> ReadingsSource | None:
-    targets = create_targets(targets_config)
+    targets = _create_targets(targets_config)
     if not targets:
         return None
-    return create_readings_source(targets)
+    return _create_readings_source(targets)
 
 
-def create_readings_source(
+def _create_readings_source(
     targets: dict[str, _Target],
 ) -> ReadingsSource:
     def _fetch() -> dict[str, fetchers_api.TargetReading]:
@@ -31,7 +31,7 @@ def create_readings_source(
     return _fetch
 
 
-def create_targets(
+def _create_targets(
     targets_config: dict[str, dict],
 ) -> dict[str, _Target] | None:
     targets = {}
