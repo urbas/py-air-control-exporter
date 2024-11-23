@@ -19,7 +19,7 @@ jobs:
           ruff check
           ruff format --check
           pyright
-          pytest py_air_control_exporter test
+          pytest -vv --color=yes --cov=py_air_control_exporter --cov-report=term py_air_control_exporter test
           hatchling build
 
       - name: Store the distribution packages
