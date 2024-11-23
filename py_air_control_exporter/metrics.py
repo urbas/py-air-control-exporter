@@ -1,21 +1,18 @@
 import itertools
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 
 import prometheus_client.core
 from prometheus_client import Metric, registry
 
-from py_air_control_exporter import fetchers_api
+from py_air_control_exporter import fetchers_api, readings_source
 
 LOG = logging.getLogger(__name__)
 
 
-ReadingsSource = Callable[[], dict[str, fetchers_api.TargetReading]]
-
-
 class PyAirControlCollector(registry.Collector):
-    def __init__(self, readings_source: ReadingsSource):
+    def __init__(self, readings_source: readings_source.ReadingsSource):
         self._readings_source = readings_source
         self._error_counters = defaultdict(int)
 
@@ -61,8 +58,6 @@ class PyAirControlCollector(registry.Collector):
         )
 
         for name, target_reading in target_readings.items():
-            if target_reading is None:
-                continue
             air_quality = target_reading.air_quality
             if air_quality is None:
                 LOG.info("No air quality information from air quality host '%s'.", name)
@@ -102,8 +97,6 @@ class PyAirControlCollector(registry.Collector):
         )
 
         for name, target_reading in target_readings.items():
-            if target_reading is None:
-                continue
             control_info = target_reading.control_info
             if control_info is None:
                 LOG.info("No control info for air quality host '%s'.", name)
@@ -134,8 +127,6 @@ class PyAirControlCollector(registry.Collector):
         )
 
         for name, target_reading in target_readings.items():
-            if target_reading is None:
-                continue
             filters = target_reading.filters
             if filters is None:
                 LOG.info("No filter information for air quality host '%s'.", name)
