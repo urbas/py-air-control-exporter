@@ -2,10 +2,10 @@ import prometheus_client
 from flask import Flask
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
-from py_air_control_exporter import metrics
+from py_air_control_exporter import metrics, readings_source
 
 
-def create_app(readings_source: metrics.ReadingsSource):
+def create_app(readings_source: readings_source.ReadingsSource):
     app = Flask(__name__)
     metrics_collector_registry = prometheus_client.CollectorRegistry(auto_describe=True)
     metrics_collector_registry.register(metrics.PyAirControlCollector(readings_source))

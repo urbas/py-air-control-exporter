@@ -34,7 +34,7 @@ def test_unknown_protocol_exit_code(tmp_path):
     assert result.exit_code == 1
 
 
-def test_main(mock_create_app, mock_create_readings_source, mock_create_fetcher):
+def test_main(mock_create_app, mock_from_config):
     """Check that the exporter Flask app is created with all the given parameters"""
     result = CliRunner().invoke(
         main.main,
@@ -46,14 +46,10 @@ def test_main(mock_create_app, mock_create_readings_source, mock_create_fetcher)
         ],
     )
     assert result.exit_code == 0
-    mock_create_readings_source.assert_called_once_with(
-        {
-            "192.168.1.123": main.Target(
-                host="192.168.1.123", fetcher=mock_create_fetcher.return_value
-            )
-        }
+    mock_from_config.assert_called_once_with(
+        {"192.168.1.123": {"host": "192.168.1.123", "protocol": "http"}}
     )
-    expected_targets = mock_create_readings_source.return_value
+    expected_targets = mock_from_config.return_value
     mock_create_app.assert_called_once_with(expected_targets)
     mock_create_app.return_value.run.assert_called_once_with(host="1.2.3.4", port=12345)
 
@@ -68,17 +64,7 @@ def test_unknown_protocol():
     assert "--protocol" in result.stderr
 
 
-def test_unknown_protocol_in_config(caplog):
-    """Check that error is logged when config contains unknown protocol"""
-    targets_config = {"test": {"host": "1.2.3.4", "protocol": "invalid"}}
-    result = main.create_targets(targets_config)
-    assert result is None
-    assert "Unknown protocol 'invalid' for target 'test'" in caplog.text
-    assert "Known protocols:" in caplog.text
-
-
-@pytest.mark.usefixtures("mock_create_app")
-def test_config_file(mock_create_readings_source, mock_create_fetcher):
+def test_config_file(mock_from_config, mock_create_app):
     """Check that the exporter Flask app is created with config file parameters"""
     result = CliRunner().invoke(
         main.main,
@@ -92,55 +78,26 @@ def test_config_file(mock_create_readings_source, mock_create_fetcher):
         ],
     )
     assert result.exit_code == 0
-    mock_create_readings_source.assert_called_once_with(
+    mock_from_config.assert_called_once_with(
         {
-            "foo": main.Target(
-                host="1.2.3.4", fetcher=mock_create_fetcher.return_value
-            ),
-            "bar": main.Target(
-                host="1.2.3.5", fetcher=mock_create_fetcher.return_value
-            ),
+            "foo": {"host": "1.2.3.4", "protocol": "http"},
+            "bar": {"host": "1.2.3.5", "protocol": "http"},
         }
     )
+    mock_create_app.assert_called_once_with(mock_from_config.return_value)
 
 
 @pytest.mark.usefixtures("mock_create_fetcher")
-def test_default_parameters(mock_create_app, mock_create_readings_source):
+def test_default_parameters(mock_create_app, mock_from_config):
     """Check that the exporter Flask app is created with the given hostname and default
     parameters
     """
     result = CliRunner().invoke(main.main, ["--host=192.168.1.123", "--name=foo"])
     assert result.exit_code == 0
-    mock_create_app.assert_called_once_with(mock_create_readings_source.return_value)
+    mock_create_app.assert_called_once_with(mock_from_config.return_value)
     mock_create_app.return_value.run.assert_called_once_with(
         host="127.0.0.1", port=9896
     )
-
-
-def test_create_targets(mocker):
-    """Check that the targets dictionary is created and ready to fetch."""
-    mock_get_reading = mocker.patch(
-        "py_air_control_exporter.fetchers.http_philips.get_reading",
-        autospec=True,
-    )
-
-    targets_config = {
-        "foo": {"host": "1.2.3.4", "protocol": "http"},
-        "bar": {"host": "1.2.3.5", "protocol": "http"},
-    }
-    targets = main.create_targets(targets_config)
-    assert isinstance(targets, dict)
-    assert len(targets) == 2
-    assert "foo" in targets
-    assert "bar" in targets
-
-    # Call first fetcher and verify arguments
-    targets["foo"].fetcher()
-    mock_get_reading.assert_called_with("1.2.3.4")
-
-    # Call second fetcher and verify arguments
-    targets["bar"].fetcher()
-    mock_get_reading.assert_called_with("1.2.3.5")
 
 
 @pytest.fixture(name="mock_create_app")
@@ -152,10 +109,10 @@ def _mock_create_app(mocker):
     )
 
 
-@pytest.fixture(name="mock_create_readings_source")
+@pytest.fixture(name="mock_from_config")
 def _mock_create_readings_source(mocker):
     return mocker.patch(
-        "py_air_control_exporter.main.create_readings_source",
+        "py_air_control_exporter.readings_source.from_config",
         autospec=True,
     )
 
