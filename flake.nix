@@ -32,6 +32,16 @@
           ];
         };
 
+        editablePkg = pkg.overrideAttrs (oldAttrs: {
+          nativeBuildInputs = oldAttrs.nativeBuildInputs ++ [
+            (python3.pkgs.mkPythonEditablePackage {
+              pname = pyproject.project.name;
+              inherit (pyproject.project) scripts version;
+              root = "$PWD";
+            })
+          ];
+        });
+
       in {
         packages.default = pkg;
         devShells.default = mkShell {
@@ -47,7 +57,7 @@
             twine
             types-pyyaml
           ];
-          inputsFrom = [ pkg ];
+          inputsFrom = [ editablePkg ];
         };
       });
 }
